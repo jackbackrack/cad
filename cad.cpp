@@ -181,8 +181,8 @@ Mesh simplify_mesh(Mesh mesh) {
     i += 1;
   }
   auto new_soup = topo->face_soup().x;
-  printf("BEFORE %d,%d AFTER %d,%d\n",
-         pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
+  // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
+  //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
   return tuple(const_soup(new_soup), new_points);
 }
 
@@ -514,7 +514,7 @@ Nested<ET> contour_to_poly(Array<ET> contour) {
 template<class ET>
 Array<ET> poly_to_contour(Nested<ET> poly, int i) {
   Array<ET> contour;
-  printf("POLY TO CONTOUR[%d] %d\n", i, poly[i].size());
+  // printf("POLY TO CONTOUR[%d] %d\n", i, poly[i].size());
   for (auto e : poly[i])
     contour.append(e);
   return contour;
@@ -759,7 +759,7 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
     for (int i = 0; i < contours.size(); i++) {
       auto contour = poly_to_contour(contours, i);
       if (!is_clockwise(contour)) {
-        printf("OUTER %d\n", i);
+        // printf("OUTER %d\n", i);
         auto mesh = taper_mesh(len, r0, r1, contour);
         // pretty_print_soup(mesh);
         res = add(res, mesh);
@@ -768,7 +768,7 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
     for (int i = 0; i < contours.size(); i++) {
       auto contour = poly_to_contour(contours, i);
       if (is_clockwise(contour)) {
-        printf("INNER %d\n", i);  
+        // printf("INNER %d\n", i);  
         auto mesh = xxx(scale_matrix(vec(1.0,1.0,2.0)), taper_mesh(len, r0, r1, contour));
         // pretty_print_soup(mesh);
         res = add(res, mesh);
