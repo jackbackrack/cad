@@ -1,11 +1,17 @@
 # cad
+* simple programmatic 3D solid geometry
+* representations for points, polylines, polygons, and meshes
+* simple IR for describing operations and is good destination for programming languages
 
-# needs libs geode, gui, portaudio, portmidi, opencv
+# needs libs
+* geode
+* gui
+* portaudio, portmidi, opencv
 
 # files
 * cad.*: cad operations written directly against geode
 * geom.*: wrapper around geode reps to be dynamic allow polymorphic construction
-* read-eval.*: interpreter that read strings into and evals geoms
+* read-eval.*: IR interpreter that read strings into and evals geoms
 * app.*: gui front end and viewer
 
 # examples:
