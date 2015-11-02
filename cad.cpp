@@ -241,8 +241,8 @@ Nested<TV2> sub(Nested<TV2> c0, Nested<TV2> c1) {
 }
 
 Mesh split_mesh (Mesh mesh, int depth) {
-  auto res = split_soup(mesh.soup, mesh.points, depth);
-  return Mesh(res.x, res.y);
+  auto split = split_soup(mesh.soup, mesh.points, depth);
+  return simplify_mesh(Mesh(split.x, split.y));
 }
 
 Nested<TV2> offset(T a, Nested<TV2> c) {
@@ -256,7 +256,7 @@ Mesh add(Mesh mesh0, Mesh mesh1) {
   // printf("--- START UNIONING ---\n");
   auto res   = split_mesh(merge, 0);
   // printf("--- DONE  UNIONING ---\n");
-  return simplify_mesh(res);
+  return res;
 }
 
 void pretty_print_soup(Mesh mesh) {
