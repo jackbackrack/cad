@@ -85,6 +85,7 @@ Mesh const_soup(Tuple<Ref<TriangleSoup>, Array<TV>> val) {
   return tuple(const_soup(val.x), val.y);
 }
 
+/*
 Mesh simplify_mesh(Mesh mesh) {
   printf("SIMPLIFYING\n");
   Array<IV> faces;
@@ -133,8 +134,8 @@ Mesh simplify_mesh(Mesh mesh) {
          faces.size(), new_faces.size(), faces.size() - new_faces.size() );
   return fab_mesh(new_faces, points);
 }
+*/
 
-/*
 Mesh report_simplify_mesh(Mesh mesh) {
   Array<IV> new_faces;
   auto points = mesh.y;
@@ -184,7 +185,6 @@ Mesh simplify_mesh(Mesh mesh) {
          pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
   return tuple(const_soup(new_soup), new_points);
 }
-*/
 
 // invert triangle soup so normals point inwards
 Mesh invert_soup(Mesh soup) {
