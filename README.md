@@ -48,3 +48,10 @@
 
 ```cad "(xrot(15, cube(2)) + yrot(15, cube(2)) + zrot(15, cube(2)) + cube(2)) - sphere(2.6)"```
 
+# TODO
+
+* 3D offsetting
+* 3D mesh shadow instead of slice
+* 3D->3D revolve/extrude
+* SVG reading/writing
+* colors
