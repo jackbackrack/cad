@@ -1,5 +1,13 @@
 # cad
+
 # needs libs geode, gui, portaudio, portmidi, opencv
+
+# files
+* cad.*: cad operations written directly against geode
+* geom.*: wrapper around geode reps to be dynamic allow polymorphic construction
+* read-eval.*: interpreter that read strings into and evals geoms
+* app.*: gui front end and viewer
+
 # examples:
 
 ```cad "slice(0, revolve(xmov(3,square(2) - square(1))))"```
