@@ -101,7 +101,7 @@ class PolyGeom : public Geom {
 class MeshGeom : public Geom {
  public:
   Mesh val;
- MeshGeom(Tuple<Ref<TriangleSoup>, Array<TV>> val) : Geom(mesh_kind), val(const_soup(val)) { }
+ MeshGeom(Tuple<Ref<TriangleSoup>, Array<TV>> val) : Geom(mesh_kind), val(const_mesh(val)) { }
  MeshGeom(Mesh val) : Geom(mesh_kind), val(val) { }
 };
 

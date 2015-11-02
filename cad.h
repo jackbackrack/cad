@@ -26,7 +26,13 @@ typedef Vector<T,2> TV2;
 typedef Vector<T,3> TV;
 typedef Vector<int,3> IV;
 typedef Vector<int,2> IV2;
-typedef Tuple<Ref<const TriangleSoup>, Array<TV>> Mesh;
+// typedef Tuple<Ref<const TriangleSoup>, Array<TV>> Mesh;
+struct Mesh {
+public:
+  Ref<const TriangleSoup> soup;
+  Array<TV> points;
+  Mesh(Ref<const TriangleSoup> soup, Array<TV> points) : soup(soup), points(points) { }
+};
 
 extern Mesh fab_mesh (Array<IV> faces, Array<TV> points);
 
@@ -48,11 +54,11 @@ Nested<ET> line_to_polyline(Array<ET> line) {
 extern double is_clockwise (Array<TV2> contour);
 
 extern Ref<const TriangleSoup> const_soup(Ref<TriangleSoup> val);
-extern Mesh const_soup(Tuple<Ref<TriangleSoup>, Array<TV>> val);
+extern Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV>> val);
 
 extern Mesh simplify_mesh(Mesh mesh);
 
-extern Mesh invert_soup(Mesh soup);
+extern Mesh invert_mesh(Mesh mesh);
 
 extern Nested<TV2> invert_poly(Nested<TV2> poly);
 
@@ -100,9 +106,9 @@ template<class ET> Nested<ET> contour_to_poly(Array<ET> contour);
 
 template<class ET> Array<ET> poly_to_contour(Nested<ET> poly, int i = 0);
 
-extern Mesh all_soup(void);
+extern Mesh all_mesh(void);
 
-extern Mesh none_soup(void);
+extern Mesh none_mesh(void);
 
 extern Nested<TV2> square_poly(TV2 min, TV2 max);
 

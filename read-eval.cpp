@@ -471,46 +471,6 @@ Geom* parse_expression(Tokenizer& s) {
   return g;
 }
 
-/*
-int main(int, char**) {
-  // std::string filename0 = "test0.stl";
-  // std::string filename1 = "test1.stl";
-  // auto soup0  = read_soup(filename0);
-  // auto soup1  = read_soup(filename1);
-  auto soup0     = cube_mesh(vec(-1.1,-1.1,-1.1), vec( 1.1, 1.1, 1.1) );
-  auto soup1     = icosahedron_mesh();
-  auto soup2     = sphere_mesh(4, vec(0.0, 0.0, 0.0), 1.4);
-  auto sq        = square_poly(vec(-1.0, -1.0), vec(1.0, 1.0));
-  auto circ      = circle_poly(1.0, 16);
-  auto star      = star_poly(1.0, 2.0, 4);
-
-  auto star_z    = lift_poly(star, 0.0);
-
-  // Array<Array<TV>> poly;
-  // poly.append(star_z);
-  // Nested<TV> poly;
-  // poly.append(RawArray<TV>(star_z));
-  auto tri_star = triangulate(star_z);
-  printf("TRI_STARC PTS %d FACES %d\n", tri_star.y.size(), tri_star.x->elements.size());
-
-  auto union_topology_and_vertices        = union_soups(soup0, soup1);
-  auto intersection_topology_and_vertices = intersection_soups(soup0, soup2);
-  auto difference_topology_and_vertices   = difference_soups(soup1, soup0);
-  auto cube_cylinder = extrude(sq, -8.0, 8.0);
-  auto cylinder = extrude(circ, -8.0, 8.0);
-  auto star_cylinder = extrude(star, -8.0, 8.0);
-
-  write_mesh("union.stl", union_topology_and_vertices.x, union_topology_and_vertices.y);
-  write_mesh("intersection.stl", intersection_topology_and_vertices.x, intersection_topology_and_vertices.y);
-  write_mesh("difference.stl", difference_topology_and_vertices.x, difference_topology_and_vertices.y);
-  write_mesh("cube_cylinder.stl", cube_cylinder.x, cube_cylinder.y);
-  write_mesh("cylinder.stl", cylinder.x, cylinder.y);
-  write_mesh("star_cylinder.stl", star_cylinder.x, star_cylinder.y);
-  printf("STARC PTS %d FACES %d\n", star_cylinder.y.size(), star_cylinder.x->elements.size());
-  return 0;
-}
-*/
-
 #ifdef MACOSX
 #include <GLUT/glut.h> 
 #else
@@ -523,15 +483,15 @@ inline TV get_color(TV n) {
              (n.z > 0.0 ? n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0));
 }
 
-int display_mesh (Mesh soup, bool is_show_lines, bool is_show_normals) {
+int display_mesh (Mesh mesh, bool is_show_lines, bool is_show_normals) {
   int dl = glGenLists(1);
   glNewList(dl, GL_COMPILE);
   glColor4f(1.0, 1.0, 1.0, 1.0);
   glBegin(GL_TRIANGLES);
-  for (auto t : soup.x->elements) {
-    auto p0 = soup.y(t[0]);
-    auto p1 = soup.y(t[1]);
-    auto p2 = soup.y(t[2]);
+  for (auto t : mesh.soup->elements) {
+    auto p0 = mesh.points(t[0]);
+    auto p1 = mesh.points(t[1]);
+    auto p2 = mesh.points(t[2]);
     auto n = cross(p1 - p0, p2 - p0);
     normalize(n);
     glNormal3d(n.x, n.y, n.z);
@@ -542,10 +502,10 @@ int display_mesh (Mesh soup, bool is_show_lines, bool is_show_normals) {
     glVertex3d(p2.x, p2.y, p2.z);
   }
   glEnd();
-  for (auto t : soup.x->elements) {
-    auto p0 = soup.y(t[0]);
-    auto p1 = soup.y(t[1]);
-    auto p2 = soup.y(t[2]);
+  for (auto t : mesh.soup->elements) {
+    auto p0 = mesh.points(t[0]);
+    auto p1 = mesh.points(t[1]);
+    auto p2 = mesh.points(t[2]);
     if (is_show_lines) {
       glColor4f(1.0, 0.0, 0.0, 1.0);
       glBegin(GL_LINE_LOOP);

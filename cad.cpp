@@ -23,7 +23,8 @@ void ensure (bool val, std::string msg) {
 }
 
 Mesh fab_mesh (Array<IV> faces, Array<TV> points) {
-  return tuple(new_<const TriangleSoup>(faces),points);
+  // return tuple(new_<const TriangleSoup>(faces),points);
+  return Mesh(new_<const TriangleSoup>(faces),points);
 }
 
 typedef real T;
@@ -60,16 +61,16 @@ double is_clockwise (Array<TV2> contour) {
 }
 
 // Combines multiple triangle soups into one
-static Mesh concat_soups(Mesh soup0, Mesh soup1) {
+static Mesh concat_meshes(Mesh mesh0, Mesh mesh1) {
   Array<IV> triangles;
   Array<TV> vertices;
 
-  for(const auto& s : { soup0, soup1 }) {
+  for(const auto& s : { mesh0, mesh1 }) {
     // 0th vertex in each soup will be first vertex after all previous ones
     // Save as a vector of ints to we can directly add it to each triangle
     const auto index_offset = IV::repeat(vertices.size());
-    vertices.extend(s.y);
-    for(const auto& t : s.x->elements) {
+    vertices.extend(s.points);
+    for(const auto& t : s.soup->elements) {
       triangles.append(t+index_offset); // Add new triangle with indices mapped to combined vertices
     }
   }
@@ -81,8 +82,8 @@ Ref<const TriangleSoup> const_soup(Ref<TriangleSoup> val) {
   return new_<const TriangleSoup>(val->elements);
 }
 
-Mesh const_soup(Tuple<Ref<TriangleSoup>, Array<TV>> val) {
-  return tuple(const_soup(val.x), val.y);
+Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV>> val) {
+  return Mesh(const_soup(val.x), val.y);
 }
 
 /*
@@ -138,8 +139,8 @@ Mesh simplify_mesh(Mesh mesh) {
 
 Mesh report_simplify_mesh(Mesh mesh) {
   Array<IV> new_faces;
-  auto points = mesh.y;
-  for (auto face : mesh.x->elements) {
+  auto points = mesh.points;
+  for (auto face : mesh.soup->elements) {
     if (points[face.x] == points[face.y])
       printf("zero edge %d -> %d\n", face.x, face.y);
     if (points[face.y] == points[face.z])
@@ -149,18 +150,18 @@ Mesh report_simplify_mesh(Mesh mesh) {
     new_faces.append(face);
   }
   printf("%d FACES NOW %d REMOVED %d FACES\n",
-         mesh.x->elements.size(), new_faces.size(), mesh.x->elements.size() - new_faces.size() );
+         mesh.soup->elements.size(), new_faces.size(), mesh.soup->elements.size() - new_faces.size() );
   return fab_mesh(new_faces, points);
 }
 
 Mesh simplify_mesh(Mesh mesh) {
   // printf("STARTING SIMPLIFICATION\n");
   // report_simplify_mesh(mesh);
-  Array<TV> pos(mesh.y);
+  Array<TV> pos(mesh.points);
   Field<TV,VertexId> field(pos.copy());
   auto topo = new_<MutableTriangleTopology>();
-  topo->add_vertices(mesh.y.size());
-  for (auto face : mesh.x->elements)
+  topo->add_vertices(mesh.points.size());
+  for (auto face : mesh.soup->elements)
     topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
   //  ImproveOptions options(1.1,0.01,0.01);
   ImproveOptions options(1.0000001,0.0000001,0.0000001);
@@ -183,18 +184,18 @@ Mesh simplify_mesh(Mesh mesh) {
   auto new_soup = topo->face_soup().x;
   // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
   //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
-  return tuple(const_soup(new_soup), new_points);
+  return Mesh(const_soup(new_soup), new_points);
 }
 
 // invert triangle soup so normals point inwards
-Mesh invert_soup(Mesh soup) {
+Mesh invert_mesh(Mesh mesh) {
   Array<IV> triangles;
 
-  for(const auto& t : soup.x->elements) {
+  for(const auto& t : mesh.soup->elements) {
     triangles.append(vec(t[0], t[2], t[1]));
   }
 
-  return fab_mesh(triangles, soup.y);
+  return fab_mesh(triangles, mesh.points);
 }
 
 Nested<TV2> invert_poly(Nested<TV2> poly) {
@@ -239,28 +240,32 @@ Nested<TV2> sub(Nested<TV2> c0, Nested<TV2> c1) {
   return polygon_union(c0, invert_poly(c1));
 }
 
+Mesh split_mesh (Mesh mesh, int depth) {
+  auto res = split_soup(mesh.soup, mesh.points, depth);
+  return Mesh(res.x, res.y);
+}
+
 Nested<TV2> offset(T a, Nested<TV2> c) {
   // auto merge = concat_polygons(c0, invert_polygon(c1));
   // return split_polygons(merge.x, merge.y, 0);
   return c;
 }
 
-Mesh add(Mesh soup0, Mesh soup1) {
-  auto merge = concat_soups(soup0, soup1);
+Mesh add(Mesh mesh0, Mesh mesh1) {
+  auto merge = concat_meshes(mesh0, mesh1);
   // printf("--- START UNIONING ---\n");
-  auto res   = split_soup(merge.x, merge.y, 0);
+  auto res   = split_mesh(merge, 0);
   // printf("--- DONE  UNIONING ---\n");
-  res = simplify_mesh(res);
-  return res;
+  return simplify_mesh(res);
 }
 
-void pretty_print_soup(Mesh soup) {
+void pretty_print_soup(Mesh mesh) {
   int i = 0;
-  for (auto pt : soup.y) {
+  for (auto pt : mesh.points) {
     printf("PT[%2d] %g,%g,%g\n", i, pt.x, pt.y, pt.z);
     i += 1;
   }
-  for (auto tri : soup.x->elements)
+  for (auto tri : mesh.soup->elements)
     printf("TRI %2d,%2d,%2d\n", tri.x, tri.y, tri.z);
 }
 
@@ -354,11 +359,11 @@ void do_print_faces(std::string name, Array<const IV> line) {
   printf(")");
 }
 
-void print_soup(Mesh soup) {
+void print_soup(Mesh mesh) {
   printf("mesh(");
-  do_print_line3("points", soup.y);
+  do_print_line3("points", mesh.points);
   printf(", ");
-  do_print_faces("faces", soup.x->elements);
+  do_print_faces("faces", mesh.soup->elements);
   printf(")\n");
 }
 
@@ -419,16 +424,15 @@ void print_matrix(Matrix<T,4> M) {
          M.x[0][3],M.x[1][3],M.x[2][3],M.x[3][3]);
 }
 
-Mesh mul(Mesh soup0, Mesh soup1) {
-  auto merge = concat_soups(soup0, soup1);
-  auto res = split_soup(merge.x, merge.y, 1);
-  return res;
+Mesh mul(Mesh mesh0, Mesh mesh1) {
+  auto merge = concat_meshes(mesh0, mesh1);
+  return split_mesh(merge, 1);
 }
 
-Mesh mesh_from(int start, Mesh soup) {
+Mesh mesh_from(int start, Mesh mesh) {
   Array<TV> pts;
-  for (int i = start; i < soup.y.size(); i++) {
-    pts.append(soup.y[i]);
+  for (int i = start; i < mesh.points.size(); i++) {
+    pts.append(mesh.points[i]);
   }
   /*
   for (int i = 0; i < pts.size(); i++) {
@@ -440,20 +444,20 @@ Mesh mesh_from(int start, Mesh soup) {
   }
   */
   Array<IV> faces;
-  for (auto tri : soup.x->elements) {
+  for (auto tri : mesh.soup->elements) {
     bool is_all = tri.x >= start && tri.y >= start && tri.z >= start;
     if (is_all)
       faces.append(vec(tri.x - start, tri.y - start, tri.z - start));
   }
-  return tuple(new_<const TriangleSoup>(faces), pts);
+  return fab_mesh(faces, pts);
 }
 
-Nested<TV2> slice(T z, Mesh soup) {
+Nested<TV2> slice(T z, Mesh mesh) {
   T t = 1e8;
-  auto smesh = const_soup(cube_mesh(vec(-t, -t, -t), vec( t,  t,  z)));
+  auto smesh = const_mesh(cube_mesh(vec(-t, -t, -t), vec( t,  t,  z)));
   // print_soup(smesh);
-  auto res = mul(smesh, soup);
-  int start = smesh.y.size() + soup.y.size();
+  auto res = mul(smesh, mesh);
+  int start = smesh.points.size() + mesh.points.size();
   /*
   printf("---->>>>\n");
   print_soup(res);
@@ -466,7 +470,7 @@ Nested<TV2> slice(T z, Mesh soup) {
   }
   */
   auto new_mesh = mesh_from(start, res);
-  auto boundary = new_mesh.x->boundary_mesh();
+  auto boundary = new_mesh.soup->boundary_mesh();
   auto polys = boundary->polygons();
   /*
   int i = 0;
@@ -489,7 +493,7 @@ Nested<TV2> slice(T z, Mesh soup) {
   for (auto poly : polys.x) {
     Array<TV2> contour;
     for (auto p : poly) {
-      auto pt = new_mesh.y[p];
+      auto pt = new_mesh.points[p];
       contour.append(vec(pt.x, pt.y));
     }
     pres.append(contour);
@@ -498,9 +502,9 @@ Nested<TV2> slice(T z, Mesh soup) {
   return pres;
 }
 
-Mesh sub(Mesh soup0, Mesh soup1) {
-  auto merge = concat_soups(soup0, invert_soup(soup1));
-  return split_soup(merge.x, merge.y, 0);
+Mesh sub(Mesh mesh0, Mesh mesh1) {
+  auto merge = concat_meshes(mesh0, invert_mesh(mesh1));
+  return split_mesh(merge, 0);
 }
 
 template<class ET>
@@ -520,12 +524,12 @@ Array<ET> poly_to_contour(Nested<ET> poly, int i) {
   return contour;
 }
 
-Mesh all_soup(void) {
+Mesh all_mesh(void) {
   T x = 1e8;
-  return const_soup(cube_mesh(vec(-x, -x, -x), vec(x, x, x)));
+  return const_mesh(cube_mesh(vec(-x, -x, -x), vec(x, x, x)));
 }
 
-Mesh none_soup(void) {
+Mesh none_mesh(void) {
   Array<IV> faces;
   Array<TV> points;
   return fab_mesh(faces, points);
@@ -670,8 +674,8 @@ TV2 mul(Matrix<T,4> m, TV2 pt) {
   return vec(res.x, res.y);
 }
 
-Mesh xxx(Matrix<T,4> m, Mesh soup) {
-  return tuple(soup.x, xxx(m, soup.y));
+Mesh xxx(Matrix<T,4> m, Mesh mesh) {
+  return Mesh(mesh.soup, xxx(m, mesh.points));
 }
 
 Mesh cone_mesh(T len, Array<TV2> poly) {
@@ -689,11 +693,11 @@ Mesh cone_mesh(T len, Array<TV2> poly) {
   c = c / (double)n_boundary;
   auto lid = triangulate(contour_to_poly(bot));
 
-  vh = lid.y;
+  vh = lid.points;
   vh.append(vec(c.x, c.y, zmax));
     
   Array<IV> faces;
-  for (auto face : lid.x->elements)
+  for (auto face : lid.soup->elements)
     faces.append(face);
                  
   for (int i = 0; i < n_boundary; i++) {
@@ -719,21 +723,21 @@ Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly) {
   for (auto elt : poly)
     top.append(vec(r0 * elt.x, r0 * elt.y, zmin));
   auto top_mesh = triangulate(contour_to_poly(top));
-  int n_mesh = top_mesh.y.size();
+  int n_mesh = top_mesh.points.size();
   // printf("N_MESH = %d\n", n_mesh);
 
   for (auto elt : poly) 
     bot.append(vec(r1 * elt.x, r1 * elt.y, zmax));
   auto bot_mesh = triangulate(contour_to_poly(bot));
 
-  // auto lids = concat_soups(top_mesh, invert_soup(bot_mesh));
-  auto lids = concat_soups(top_mesh, invert_soup(bot_mesh));
+  // auto lids = concat_meshes(top_mesh, invert_mesh(bot_mesh));
+  auto lids = concat_meshes(top_mesh, invert_mesh(bot_mesh));
 
   // for (auto pt : vh)
   //   printf("PT [%f,%f,%f]\n", pt.x, pt.y, pt.z);
 
   Array<IV> faces;
-  for (auto face : lids.x->elements)
+  for (auto face : lids.soup->elements)
     faces.append(face);
                  
   for (int i = 0; i < n_boundary; i++) {
@@ -745,7 +749,7 @@ Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly) {
     faces.append(vec(i,           ni,         n_mesh + ni));
     faces.append(vec(n_mesh + ni, n_mesh + i, i));
   }
-  return fab_mesh(faces, lids.y);
+  return fab_mesh(faces, lids.points);
 }
 
 Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
@@ -755,7 +759,7 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
     else
       return taper_mesh(len, r0, r1, poly_to_contour(contours, 1));
   } else {
-    auto res = none_soup();
+    auto res = none_mesh();
     for (int i = 0; i < contours.size(); i++) {
       auto contour = poly_to_contour(contours, i);
       if (!is_clockwise(contour)) {
@@ -812,7 +816,7 @@ Mesh revolve(int n, Nested<TV2> contours) {
   if (contours.size() == 1)
     return revolve(n, poly_to_contour(contours, 0));
   else {
-    auto res = none_soup();
+    auto res = none_mesh();
     for (int i = 0; i < contours.size(); i++) {
       auto contour = poly_to_contour(contours, i);
       if (!is_clockwise(contour))
@@ -910,30 +914,30 @@ Nested<TV2> offset_polyline(int n, T rad, Nested<TV2> polyline) {
 }
 
 Mesh thicken(int n, T rad, Mesh mesh) {
-  Mesh res = const_soup(sphere_mesh(n, mesh.y[0], rad));
+  Mesh res = const_mesh(sphere_mesh(n, mesh.points[0], rad));
   // printf("TH %f,%f,%f\n", line[0].x, line[0].y, line[0].z);
 
-  for (int i = 1; i < mesh.y.size(); i++) {
+  for (int i = 1; i < mesh.points.size(); i++) {
     // printf("TH %f,%f,%f\n", line[i].x, line[i].y, line[i].z);
-    res = add(res, const_soup(sphere_mesh(n, mesh.y[i], rad)));
+    res = add(res, const_mesh(sphere_mesh(n, mesh.points[i], rad)));
   }
-  auto edges = mesh.x->triangle_edges();
+  auto edges = mesh.soup->triangle_edges();
   for (auto edge : edges)
     printf("EDGE %d to %d\n", edge.x, edge.y);
   for (auto edge : edges) {
-    res = add(res, fat_edge(16, rad, mesh.y[edge.x], mesh.y[edge.y]));
+    res = add(res, fat_edge(16, rad, mesh.points[edge.x], mesh.points[edge.y]));
   }
   
   return res;
 }
 
 Mesh thicken(int n, T rad, Nested<TV> polyline) {
-  Mesh res = none_soup();
+  Mesh res = none_mesh();
   for (auto line : polyline) {
     // printf("TH %f,%f,%f\n", line[0].x, line[0].y, line[0].z);
     for (int i = 0; i < line.size(); i++) {
       // printf("TH %f,%f,%f\n", line[i].x, line[i].y, line[i].z);
-      res = add(res, const_soup(sphere_mesh(n, line[i], rad)));
+      res = add(res, const_mesh(sphere_mesh(n, line[i], rad)));
     }
     for (int i = 1; i < line.size(); i++) {
       res = add(res, fat_edge(12, rad, line[i-1], line[i]));
@@ -952,19 +956,19 @@ Mesh offset_mesh(int n, T rad, Mesh mesh) {
   Array<TV> new_points;
   for (auto point : new_mesh.y.flat)
     new_points.append(point);
-  return tuple(const_soup(new_soup), new_points);
+  return tuple(const_mesh(new_soup), new_points);
   */
   return mesh;
 }
 
 /*
 Mesh offset_mesh(int n, T rad, Mesh mesh) {
-  Mesh res = none_soup();
+  Mesh res = none_mesh();
 
   // printf("%d POINTS\n", mesh.y.size());
   // for (auto pt : mesh.y) {
   //   printf("TH %f,%f,%f\n", pt.x, pt.y, pt.z);
-  //   res = add(res, const_soup(sphere_mesh(n, pt, rad)));
+  //   res = add(res, const_mesh(sphere_mesh(n, pt, rad)));
   // }
   // res = simplify_mesh(res);
   auto edges = mesh.x->triangle_edges();

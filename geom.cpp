@@ -116,8 +116,8 @@ Geom* g_load(Geom* s) {
 
 Geom* g_save(Geom* s, Geom* g) { 
   // TODO: LOAD SVG
-  auto soup = g_mesh(g);
-  write_mesh(g_string(s), soup.x, soup.y);
+  auto mesh = g_mesh(g);
+  write_mesh(g_string(s), mesh.soup, mesh.points);
   return g;
 }
 
@@ -165,8 +165,8 @@ Geom* g_float(double a) { return new FloatGeom(a); }
 Geom* g_pi(void) { return new FloatGeom(M_PI); }
 Geom* g_none2(void) { return new PolyGeom(none_poly()); }
 Geom* g_all2(void) { return new PolyGeom(all_poly()); }
-Geom* g_none(void) { return new MeshGeom(none_soup()); }
-Geom* g_all(void) { return new MeshGeom(all_soup()); }
+Geom* g_none(void) { return new MeshGeom(none_mesh()); }
+Geom* g_all(void) { return new MeshGeom(all_mesh()); }
 Geom* g_circle(Geom* a) { return new PolyGeom(circle_poly(g_val(a), 16)); }
 Geom* g_square(Geom* a) { return new PolyGeom(square_poly(g_val(a))); }
 Geom* g_square(Geom* lo, Geom* hi) { return new PolyGeom(square_poly(g_vec2(lo), g_vec2(hi))); }
@@ -297,7 +297,7 @@ Geom* g_sub(Geom* a, Geom* b) {
 }
 Geom* g_not(Geom* a) {
   if (a->k == mesh_kind)
-    return new MeshGeom(invert_soup(g_mesh(a)));
+    return new MeshGeom(invert_mesh(g_mesh(a)));
   else if (is_poly(a))
     return new PolyGeom(invert_poly(g_poly(a)));
   else {
