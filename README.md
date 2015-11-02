@@ -18,17 +18,17 @@
 
 ```cad 'slice(0, sphere(4) - cube(2))'```
 
-```cad "revolve(xmov(6, contour(vec(-2, -2), vec(-1, 0), vec(-2, 2), vec(0, 1), vec(2, 2), vec(1, 0), vec(2, -2), vec(0, -1))))"```
+```cad "revolve(xmov(6, contour(vec(-2,-2),vec(-1,0),vec(-2,2),vec(0,1),vec(2,2),vec(1,0),vec(2,-2),vec(0,-1))))"```
 
-```cad "contour(vec(-2, -2), vec(-1, 0), vec(-2, 2), vec(0, 1), vec(2, 2), vec(1, 0), vec(2, -2), vec(0, -1))"```
+```cad "contour(vec(-2,-2),vec(-1,0),vec(-2,2),vec(0,1),vec(2,2),vec(1,0),vec(2,-2),vec(0,-1))"```
 
 ```cad "revolve(xmov(8, circle(4)))"```
 
-```cad "revolve(xmov(4, contour(vec(-1, -1), vec(1, -1), vec(0, 1))))"```
+```cad "revolve(xmov(4, contour(vec(-1,-1),vec(1,-1),vec(0,1))))"```
 
 ```cad "((sphere(8) + extrude(20, circle(2))) - sphere(7)) - extrude(21, circle(1))"```
 
-```cad "thicken(1, line(vec(-5, 5, 0), vec(-5, -5, 0), vec(5, -5, 0), vec(5, 5, 0)))"```
+```cad "thicken(1, line(vec(-5,5,0),vec(-5,-5,0),vec(5,-5,0),vec(5,5,0)))"```
 
 ```cad "extrude(4, cube(1))"```
 
