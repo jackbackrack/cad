@@ -459,38 +459,40 @@ Mesh mesh_from(int start, Mesh mesh) {
 }
 
 Nested<TV2> slice(T z, Mesh mesh) {
-  T t = 1e8;
+  T t = 1e8; // TODO: USE INF
   auto smesh = const_mesh(cube_mesh(vec(-t, -t, -t), vec( t,  t,  z)));
   // print_mesh(smesh);
   auto res = intersection(smesh, mesh, false);
   int start = smesh.points.size() + mesh.points.size();
-  printf("---->>>>\n");
-  print_mesh(res);
-  printf("========\n");
-  printf("%d OLD %d NEW VERTICES\n", start, res.points.size() - start);
-  for (auto tri : res.soup->elements) {
-    bool is_all = tri.x >= start && tri.y >= start && tri.z >= start;
-    if (is_all)
-      printf("SLICE %2d,%2d,%2d\n", tri.x, tri.y, tri.z);
-  }
+
+  // printf("---->>>>\n");
+  // print_mesh(res);
+  // printf("========\n");
+  // printf("%d OLD %d NEW VERTICES\n", start, res.points.size() - start);
+  // for (auto tri : res.soup->elements) {
+  //   bool is_all = tri.x >= start && tri.y >= start && tri.z >= start;
+  //   if (is_all)
+  //     printf("SLICE %2d,%2d,%2d\n", tri.x, tri.y, tri.z);
+  // }
+
   auto new_mesh = mesh_from(start, res);
   auto boundary = new_mesh.soup->boundary_mesh();
   auto polys = boundary->polygons();
 
-  int i = 0;
-  for (auto p : new_mesh.points) {
-    printf("BP[%2d] %f,%f,%f\n", i, p.x, p.y, p.z);
-    i += 1;
-  }
-  for (auto elt : boundary->elements) {
-    printf("ELT %d,%d\n", elt.x, elt.y);
-  }
-  printf("POLYGONS\n");
-  for (auto poly : polys.x) {
-    for (auto p : poly) 
-      printf("%d ", p);
-    printf("\n");
-  }
+  // int i = 0;
+  // for (auto p : new_mesh.points) {
+  //   printf("BP[%2d] %f,%f,%f\n", i, p.x, p.y, p.z);
+  //   i += 1;
+  // }
+  // for (auto elt : boundary->elements) {
+  //   printf("ELT %d,%d\n", elt.x, elt.y);
+  // }
+  // printf("POLYGONS\n");
+  // for (auto poly : polys.x) {
+  //   for (auto p : poly) 
+  //     printf("%d ", p);
+  //   printf("\n");
+  // }
 
   Nested<TV2,false> pres;
   for (auto poly : polys.x) {
