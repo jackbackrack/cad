@@ -591,8 +591,6 @@ public:
   Array<int> indices;
 };
 
-#include <GLUT/glut.h> 
-
 typedef void (*GluTessCallbackType)();
 
 static void begin_callback(GLenum type, void* mesh) {

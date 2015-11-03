@@ -1,15 +1,19 @@
 GUI = $(HOME)/gui/src
-FLAGS = -g -march=native -O3 -DMACOSX -mtune=native -funroll-loops -Wall -Winit-self -Woverloaded-virtual -Wsign-compare -fno-strict-aliasing -std=c++11 -Wno-array-bounds -Wno-unknown-pragmas -Wno-deprecated -fPIC -DNDEBUG -DBUILDING_geode -Wno-writable-strings
-COMMON_LIBS = $(GUI)/app.a -lgeode -lportaudio -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lportaudio -lportmidi
-INCS = -I/usr/local/include/OpenEXR -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include -I. -Ibuild/native/release -I. -I/usr/local/include -I$(GUI)
+COMMON_FLAGS = -g -march=native -O3 -mtune=native -funroll-loops -Wall -Winit-self -Woverloaded-virtual -Wsign-compare -fno-strict-aliasing -std=c++11 -Wno-array-bounds -Wno-unknown-pragmas -Wno-deprecated -fPIC -DNDEBUG -DBUILDING_geode -Wno-writable-strings
+COMMON_LIBS = $(GUI)/app.a -lportaudio -lopencv_core -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_objdetect -lopencv_calib3d -lportaudio -lportmidi
+COMMON_INCS = -I/usr/local/include/OpenEXR -I. -I/usr/local/include -I$(GUI)
 OS2 := $(strip $(shell uname))
 ifeq ($(OS2), Darwin)
-  LIBS = $(COMMON_LIBS) -framework GLUT -framework OpenGL
+  FLAGS = $(COMMON_FLAGS) -DMACOSX
+  LIBS = $(COMMON_LIBS) -framework GLUT -framework OpenGL -lgeode
+  INCS = $(COMMON_INCS) -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include -I. -Ibuild/native/release
   DEFS = -DMACOSX
 else
   OS := $(strip $(shell uname -o))
   ifeq ($(OS), GNU/Linux)
-    LIBS = $(COMMON_LIBS) -L/usr/local/lib -lglut -lGL -lGLU -lm
+    FLAGS = $(COMMON_FLAGS)
+    INCS = $(COMMON_INCS) -I/usr/include/python2.7
+    LIBS = -L/usr/local/lib $(COMMON_LIBS) -lglut -lGL -lGLU -lm /usr/local/lib/libgeode.so
   else
     $(error Unknown OS)
   endif

@@ -471,12 +471,6 @@ Geom* parse_expression(Tokenizer& s) {
   return g;
 }
 
-#ifdef MACOSX
-#include <GLUT/glut.h> 
-#else
-#include <GL/glut.h> // Linux, Windows
-#endif
-
 inline TV get_color(TV n) {
   return vec((n.x > 0.0 ? n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0),
              (n.y > 0.0 ? n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0),
