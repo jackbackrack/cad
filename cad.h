@@ -133,13 +133,13 @@ extern TV mul(Matrix<T,4> m, TV pt);
 
 extern TV2 mul(Matrix<T,4> m, TV2 pt);
 
-template<class E> Array<E> xxx(Matrix<T,4> m, Array<E> pts) {
+template<class E> Array<E> mul(Matrix<T,4> m, Array<E> pts) {
   Array<E> res;
   for (auto p : pts)
     res.append(mul(m, p));
   return res;
 }
-template<class E> Nested<E> xxx(Matrix<T,4> m, Nested<E> poly) {
+template<class E> Nested<E> mul(Matrix<T,4> m, Nested<E> poly) {
   Nested<E,false> pres;
   for (auto contour : poly) {
     Array<E> cres;
@@ -151,7 +151,7 @@ template<class E> Nested<E> xxx(Matrix<T,4> m, Nested<E> poly) {
   return pres;
 }
 
-extern Mesh xxx(Matrix<T,4> m, Mesh soup);
+extern Mesh mul(Matrix<T,4> m, Mesh soup);
 
 extern Mesh cone_mesh(T len, Array<TV2> poly);
 

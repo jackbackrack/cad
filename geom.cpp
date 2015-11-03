@@ -197,84 +197,91 @@ Geom* g_elt(Geom* g, Geom* i) {
     error("Bad arg for elt"); return NULL;
   }
 }
-Geom* g_xxx(Matrix<T,4> m, Geom* g) { 
+Geom* do_g_mul(Matrix<T,4> m, Geom* g) { 
   if (g->k == mesh_kind)
-    return new MeshGeom(xxx(m, g_mesh_val(g)));
+    return new MeshGeom(mul(m, g_mesh_val(g)));
   else if (g->k == poly_kind)
-    return new PolyGeom(xxx(m, g_poly_val(g)));
+    return new PolyGeom(mul(m, g_poly_val(g)));
   else if (g->k == contour_kind)
-    return new ContourGeom(xxx(m, g_contour_val(g)));
+    return new ContourGeom(mul(m, g_contour_val(g)));
   else if (g->k == line2_kind)
-    return new Line2Geom(xxx(m, g_line2_val(g)));
+    return new Line2Geom(mul(m, g_line2_val(g)));
   else if (g->k == line3_kind)
-    return new Line3Geom(xxx(m, g_line3_val(g)));
+    return new Line3Geom(mul(m, g_line3_val(g)));
   else if (g->k == polyline2_kind)
-    return new PolyLine2Geom(xxx(m, g_polyline2_val(g)));
+    return new PolyLine2Geom(mul(m, g_polyline2_val(g)));
   else if (g->k == polyline3_kind)
-    return new PolyLine3Geom(xxx(m, g_polyline3_val(g)));
+    return new PolyLine3Geom(mul(m, g_polyline3_val(g)));
   else {
-    error("Bad xxx kind"); return NULL;
+    error("Bad mul kind"); return NULL;
+  }
+}
+Geom* g_mul(Geom* a, Geom* b) { 
+  if (a->k == mat_kind)
+    return do_g_mul(g_mat_val(a), b);
+  else {
+    error("Bad args for mul"); return NULL;
   }
 }
 Geom* g_mag(Geom* v, Geom* g) { 
-  return g_xxx(scale_matrix(g_vec3_val(v)), g);
+  return do_g_mul(scale_matrix(g_vec3_val(v)), g);
 }
 Geom* g_mag1(Geom* a, Geom* g) { 
-  return g_xxx(scale_matrix(vec(g_num_val(a), g_num_val(a), g_num_val(a))), g);
+  return do_g_mul(scale_matrix(vec(g_num_val(a), g_num_val(a), g_num_val(a))), g);
 }
 Geom* g_xmag(Geom* a, Geom* g) { 
-  return g_xxx(scale_matrix(vec(g_num_val(a), 1.0, 1.0)), g);
+  return do_g_mul(scale_matrix(vec(g_num_val(a), 1.0, 1.0)), g);
 }
 Geom* g_ymag(Geom* a, Geom* g) { 
-  return g_xxx(scale_matrix(vec(1.0, g_num_val(a), 1.0)), g);
+  return do_g_mul(scale_matrix(vec(1.0, g_num_val(a), 1.0)), g);
 }
 Geom* g_zmag(Geom* a, Geom* g) { 
-  return g_xxx(scale_matrix(vec(1.0, 1.0, g_num_val(a))), g);
+  return do_g_mul(scale_matrix(vec(1.0, 1.0, g_num_val(a))), g);
 }
 Geom* g_mov(Geom* v, Geom* g) {
-  return g_xxx(translation_matrix(g_vec3_val(v)), g);
+  return do_g_mul(translation_matrix(g_vec3_val(v)), g);
 }
 Geom* g_xmov(Geom* a, Geom* g) {
-  return g_xxx(translation_matrix(vec(g_num_val(a), 0.0, 0.0)), g);
+  return do_g_mul(translation_matrix(vec(g_num_val(a), 0.0, 0.0)), g);
 }
 Geom* g_ymov(Geom* a, Geom* g) {
-  return g_xxx(translation_matrix(vec(0.0, g_num_val(a), 0.0)), g);
+  return do_g_mul(translation_matrix(vec(0.0, g_num_val(a), 0.0)), g);
 }
 Geom* g_zmov(Geom* a, Geom* g) {
-  return g_xxx(translation_matrix(vec(0.0, 0.0, g_num_val(a))), g);
+  return do_g_mul(translation_matrix(vec(0.0, 0.0, g_num_val(a))), g);
 }
 Geom* g_rot(Geom* from, Geom* to, Geom* g) {
-  return g_xxx(rotation_matrix(g_vec3_val(from), g_vec3_val(to)), g);
+  return do_g_mul(rotation_matrix(g_vec3_val(from), g_vec3_val(to)), g);
 }
 Geom* g_xrot(Geom* a, Geom* g) {
   T c=cos(g_num_val(a)),s=sin(g_num_val(a));
-  return g_xxx(Matrix<T,4>(1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1), g);
 }
 Geom* g_yrot(Geom* a, Geom* g) {
   T c=cos(g_num_val(a)),s=sin(g_num_val(a));
-  return g_xxx(Matrix<T,4>(c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1), g);
 }
 Geom* g_zrot(Geom* a, Geom* g) {
   T c=cos(g_num_val(a)),s=sin(g_num_val(a));
-  return g_xxx(Matrix<T,4>(c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1), g);
 }
 Geom* g_reflect_x(Geom* g) {
-  return g_xxx(Matrix<T,4>(-1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(-1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1), g);
 }
 Geom* g_reflect_y(Geom* g) { 
-  return g_xxx(Matrix<T,4>(1,0,0,0,-1,0,0,0,1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(1,0,0,0,-1,0,0,0,1,0,0,0,0,0,0,1), g);
 }
 Geom* g_reflect_xy(Geom* g) {
-  return g_xxx(Matrix<T,4>(-1,0,0,0,-1,0,0,0,1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(-1,0,0,0,-1,0,0,0,1,0,0,0,0,0,0,1), g);
 }
 Geom* g_reflect_z(Geom* g) {
-  return g_xxx(Matrix<T,4>(1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
 }
 Geom* g_reflect_yz(Geom* g) {
-  return g_xxx(Matrix<T,4>(1,0,0,0,-1,0,0,0,-1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(1,0,0,0,-1,0,0,0,-1,0,0,0,0,0,0,1), g);
 }
 Geom* g_reflect_xz(Geom* g) {
-  return g_xxx(Matrix<T,4>(-1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(-1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
 }
 Geom* g_add(Geom* a, Geom* b) {
   error("Bad args for add"); return NULL;
@@ -286,13 +293,6 @@ Geom* g_union(Geom* a, Geom* b) {
     return new PolyGeom(union_add(g_poly_val(a), g_poly_val(b)));
   else {
     error("Bad args for union"); return NULL;
-  }
-}
-Geom* g_mul(Geom* a, Geom* b) { 
-  if (a->k == mat_kind)
-    return g_xxx(g_mat_val(a), b);
-  else {
-    error("Bad args for mul"); return NULL;
   }
 }
 Geom* g_intersection(Geom* a, Geom* b) { 

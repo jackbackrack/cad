@@ -682,8 +682,8 @@ TV2 mul(Matrix<T,4> m, TV2 pt) {
   return vec(res.x, res.y);
 }
 
-Mesh xxx(Matrix<T,4> m, Mesh mesh) {
-  return Mesh(mesh.soup, xxx(m, mesh.points));
+Mesh mul(Matrix<T,4> m, Mesh mesh) {
+  return Mesh(mesh.soup, mul(m, mesh.points));
 }
 
 Mesh cone_mesh(T len, Array<TV2> poly) {
@@ -781,7 +781,7 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
       auto contour = poly_to_contour(contours, i);
       if (is_clockwise(contour)) {
         // printf("INNER %d\n", i);  
-        auto mesh = xxx(scale_matrix(vec(1.0,1.0,2.0)), taper_mesh(len, r0, r1, contour));
+        auto mesh = mul(scale_matrix(vec(1.0,1.0,2.0)), taper_mesh(len, r0, r1, contour));
         // pretty_print_mesh(mesh);
         res = union_add(res, mesh);
       }
@@ -884,19 +884,19 @@ Mesh fat_edge(int n, T rad, TV from, TV to) {
   auto v = to - from;
   auto res = extrude(magnitude(v), circle_poly(rad, n));
   auto c = (to + from) * 0.5;
-  return xxx(translation_matrix(c), xxx(rotation_matrix(vec(0.0, 0.0, 2*rad), v), res));
+  return mul(translation_matrix(c), mul(rotation_matrix(vec(0.0, 0.0, 2*rad), v), res));
 }
 
 Nested<TV2> fat_edge(int n, T rad, TV2 from, TV2 to) {
   auto v = to - from;
   auto res = square_poly(vec(-rad, -magnitude(v)/2), vec(rad, magnitude(v)/2));
   auto c = (to + from) * 0.5;
-  return xxx(translation_matrix(c), xxx(rotation_matrix(vec(0.0, magnitude(v)), v), res));
+  return mul(translation_matrix(c), mul(rotation_matrix(vec(0.0, magnitude(v)), v), res));
 }
 
 Nested<TV2> fat_dot(int n, T rad, TV2 pt) {
   auto circ = circle_poly(rad, n);
-  auto res = xxx(translation_matrix(pt), circ);
+  auto res = mul(translation_matrix(pt), circ);
   return res;
 }
 
@@ -1027,7 +1027,7 @@ Nested<TV2> stroke_text (std::string txt) {
   for (size_t i = 0; i < txt.size(); i++) {
     auto dx = (i + 0.5) - (txt.size() * 0.5);
     auto tmat = translation_matrix(vec(dx,0.0,0.0));
-    res.extend(xxx(tmat * smat, letter_outlines[(int)txt[i]]));
+    res.extend(mul(tmat * smat, letter_outlines[(int)txt[i]]));
   }
   return res;
 }
