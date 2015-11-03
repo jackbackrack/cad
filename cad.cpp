@@ -143,11 +143,12 @@ Mesh report_simplify_mesh(Mesh mesh) {
   for (auto face : mesh.soup->elements) {
     if (points[face.x] == points[face.y])
       printf("zero edge %d -> %d\n", face.x, face.y);
-    if (points[face.y] == points[face.z])
+    else if (points[face.y] == points[face.z])
       printf("zero edge %d -> %d\n", face.y, face.z);
-    if (points[face.x] == points[face.z])
+    else if (points[face.x] == points[face.z])
       printf("zero edge %d -> %d\n", face.x, face.z);
-    new_faces.append(face);
+    else
+      new_faces.append(face);
   }
   printf("%d FACES NOW %d REMOVED %d FACES\n",
          mesh.soup->elements.size(), new_faces.size(), mesh.soup->elements.size() - new_faces.size() );
@@ -223,24 +224,28 @@ Nested<TV2> simplify_poly(Nested<TV2> poly) {
   return res;
 }
 
+Nested<TV2> maybe_simplify_poly(Nested<TV2> poly) {
+  if (false)
+    return simplify_poly(poly);
+  else
+    return poly;
+}
 Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1) {
   auto res = polygon_union(c0, c1);
   // printf("UNION POLY\n");
-  if (true)
-    return simplify_poly(res);
-  else
-    return res;
+  return maybe_simplify_poly(res);
 }
 
 Nested<TV2> intersection(Nested<TV2> c0, Nested<TV2> c1) {
-  return polygon_intersection(c0, c1);
+  return maybe_simplify_poly(polygon_intersection(c0, c1));
 }
 
 Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1) {
-  return polygon_union(c0, invert_poly(c1));
+  return maybe_simplify_poly(polygon_union(c0, invert_poly(c1)));
 }
 
-Mesh maybe_simplify (Mesh mesh, bool is_simplify) {
+Mesh maybe_simplify_mesh (Mesh mesh, bool is_simplify) {
+  // report_simplify_mesh(mesh);
   if (is_simplify)
     return simplify_mesh(mesh);
   else
@@ -248,7 +253,7 @@ Mesh maybe_simplify (Mesh mesh, bool is_simplify) {
 }
 Mesh split_mesh (Mesh mesh, int depth, bool is_simplify) {
   auto split = split_soup(mesh.soup, mesh.points, depth);
-  return maybe_simplify(Mesh(split.x, split.y), is_simplify);
+  return maybe_simplify_mesh(Mesh(split.x, split.y), is_simplify);
 }
 
 Nested<TV2> offset(T a, Nested<TV2> c) {

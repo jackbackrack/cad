@@ -22,7 +22,7 @@ endif
 all: cad
 
 clean:
-	rm *.o cad
+	rm -f *.o cad
 
 cad.o: cad.h cad.cpp
 	clang++ -c $(FLAGS) $(INCS) cad.cpp
