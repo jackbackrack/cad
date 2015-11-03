@@ -197,6 +197,14 @@ Geom* g_elt(Geom* g, Geom* i) {
     error("Bad arg for elt"); return NULL;
   }
 }
+Geom* g_add(Geom* a, Geom* b) {
+  // TODO: FILL IN FOR NUMS AND VECS
+  error("Bad args for add"); return NULL;
+}
+Geom* g_sub(Geom* a, Geom* b) {
+  // TODO: FILL IN FOR NUMS AND VECS
+  error("Bad args for sub"); return NULL;
+}
 Geom* do_g_mul(Matrix<T,4> m, Geom* g) { 
   if (g->k == mesh_kind)
     return new MeshGeom(mul(m, g_mesh_val(g)));
@@ -217,6 +225,7 @@ Geom* do_g_mul(Matrix<T,4> m, Geom* g) {
   }
 }
 Geom* g_mul(Geom* a, Geom* b) { 
+  // TODO: FILL IN FOR NUMS AND VECS
   if (a->k == mat_kind)
     return do_g_mul(g_mat_val(a), b);
   else {
@@ -283,9 +292,6 @@ Geom* g_reflect_yz(Geom* g) {
 Geom* g_reflect_xz(Geom* g) {
   return do_g_mul(Matrix<T,4>(-1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
 }
-Geom* g_add(Geom* a, Geom* b) {
-  error("Bad args for add"); return NULL;
-}
 Geom* g_union(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)
     return new MeshGeom(union_add(g_mesh_val(a), g_mesh_val(b)));
@@ -303,9 +309,6 @@ Geom* g_intersection(Geom* a, Geom* b) {
   else {
     error("Bad args for intersection"); return NULL;
   }
-}
-Geom* g_sub(Geom* a, Geom* b) {
-  error("Bad args for sub"); return NULL;
 }
 Geom* g_difference(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)

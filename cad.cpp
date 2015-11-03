@@ -225,7 +225,7 @@ Nested<TV2> simplify_poly(Nested<TV2> poly) {
 }
 
 Nested<TV2> maybe_simplify_poly(Nested<TV2> poly) {
-  if (false)
+  if (true)
     return simplify_poly(poly);
   else
     return poly;
