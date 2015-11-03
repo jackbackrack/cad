@@ -16,9 +16,7 @@
 
 # examples:
 
-```cad "slice(0, revolve(xmov(3,square(2) - square(1))))"```
-
-```cad "revolve(xmov(3,square(2) - square(1)))"```
+```cad 'extrude(2, mag1(2,offset(0.05, text("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))))'```
 
 ```cad 'extrude(2, mag1(2,thicken(0.05, text("ABCDEFGHIJKLMNOPQRSTUVWXYZ"))))'```
 
@@ -30,7 +28,7 @@
 
 ```cad 'letter("A")'```
 
-```cad 'slice(0, sphere(4) - cube(2))'```
+```cad 'slice(0, sphere(4) \ cube(2))'```
 
 ```cad "revolve(xmov(6, contour(vec(-2,-2),vec(-1,0),vec(-2,2),vec(0,1),vec(2,2),vec(1,0),vec(2,-2),vec(0,-1))))"```
 
@@ -40,13 +38,21 @@
 
 ```cad "revolve(xmov(4, contour(vec(-1,-1),vec(1,-1),vec(0,1))))"```
 
-```cad "((sphere(8) + extrude(20, circle(2))) - sphere(7)) - extrude(21, circle(1))"```
+```cad "((sphere(8) | extrude(20, circle(2))) \ sphere(7)) \ extrude(21, circle(1))"```
 
 ```cad "thicken(1, line(vec(-5,5,0),vec(-5,-5,0),vec(5,-5,0),vec(5,5,0)))"```
 
 ```cad "extrude(4, cube(1))"```
 
-```cad "(xrot(15, cube(2)) + yrot(15, cube(2)) + zrot(15, cube(2)) + cube(2)) - sphere(2.6)"```
+```cad "(xrot(15, cube(2)) | yrot(15, cube(2)) | zrot(15, cube(2)) | cube(2)) \ sphere(2.6)"```
+
+```cad "slice(0,revolve(xmov(4,square(2) - square(1))))"```
+
+```cad "revolve(xmov(4,square(2)-square(1)))"```
+
+```cad "extrude(16,square(3)-square(2))"```
+
+```cad "square(3)-square(2)"```
 
 # TODO
 

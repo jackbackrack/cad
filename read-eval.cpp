@@ -117,20 +117,22 @@ int Tokenizer::get_int() {
 char Tokenizer::get_char() {
   auto tok = get();
   if (tok.type != tok_sym)
-    error("EXPECT: FAILURE");
+    error("EXPECT: FAILURE NOT CHAR");
   return tok.sym[0];
 }
 
 void Tokenizer::expect(char kind) {
   auto tok = get();
-  if (tok.type != kind)
-    error("EXPECT: FAILURE");
+  if (tok.type != kind) {
+    std::string kstr; kstr += kind;
+    error("EXPECT: FAILURE NOT KIND ", kstr);
+  }
 }
 
 void Tokenizer::expect(std::string name) {
   auto tok = get();
   if (tok.type != tok_sym || tok.sym != name)
-    error("EXPECT: FAILURE");
+    error("EXPECT: FAILURE NOT STRING ", name);
 }
 
 Token Tokenizer::peek() {
@@ -454,17 +456,14 @@ Geom* parse_expression(Tokenizer& s) {
     s.get();
     if (tok.type == '+')
       g = g_add(g, parse_expression(s));
-    else if (tok.type == '-') {
+    else if (tok.type == '-') 
       g = g_sub(g, parse_expression(s));
-    }
-    /*
     else if (tok.type == '\\')
-      g = g_rem(g, parse_expression(s));
+      g = g_difference(g, parse_expression(s));
     else if (tok.type == '&')
-      g = g_max(g, parse_expression(s));
+      g = g_intersection(g, parse_expression(s));
     else if (tok.type == '|')
-      g = g_min(g, parse_expression(s));
-    */
+      g = g_union(g, parse_expression(s));
     else
       error("PARSE EXPR: error");
     tok = s.peek();

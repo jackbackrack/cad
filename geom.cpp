@@ -121,7 +121,7 @@ Geom* g_save(Geom* s, Geom* g) {
 
 Geom* g_print(Geom* g) { 
   if (g->k == mesh_kind)
-    print_soup(g_mesh_val(g));
+    print_mesh(g_mesh_val(g));
   else if (g->k == poly_kind)
     print_poly(g_poly_val(g));
   else if (g->k == contour_kind)
@@ -141,7 +141,7 @@ Geom* g_print(Geom* g) {
 
 Geom* g_pretty_print(Geom* g) { 
   if (g->k == mesh_kind)
-    pretty_print_soup(g_mesh_val(g));
+    pretty_print_mesh(g_mesh_val(g));
   else if (g->k == poly_kind)
     pretty_print_poly(g_poly_val(g));
   else if (g->k == contour_kind)
@@ -277,32 +277,43 @@ Geom* g_reflect_xz(Geom* g) {
   return g_xxx(Matrix<T,4>(-1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
 }
 Geom* g_add(Geom* a, Geom* b) {
+  error("Bad args for add"); return NULL;
+}
+Geom* g_union(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)
-    return new MeshGeom(add(g_mesh_val(a), g_mesh_val(b)));
+    return new MeshGeom(union_add(g_mesh_val(a), g_mesh_val(b)));
   else if (is_poly(a) && is_poly(b))
-    return new PolyGeom(add(g_poly_val(a), g_poly_val(b)));
+    return new PolyGeom(union_add(g_poly_val(a), g_poly_val(b)));
   else {
-    error("Bad args for add"); return NULL;
+    error("Bad args for union"); return NULL;
   }
 }
 Geom* g_mul(Geom* a, Geom* b) { 
   if (a->k == mat_kind)
     return g_xxx(g_mat_val(a), b);
-  else if (a->k == mesh_kind && b->k == mesh_kind)
-    return new MeshGeom(mul(g_mesh_val(a), g_mesh_val(b)));
-  else if (is_poly(a) && is_poly(b))
-    return new PolyGeom(mul(g_poly_val(a), g_poly_val(b)));
   else {
     error("Bad args for mul"); return NULL;
   }
 }
-Geom* g_sub(Geom* a, Geom* b) {
+Geom* g_intersection(Geom* a, Geom* b) { 
   if (a->k == mesh_kind && b->k == mesh_kind)
-    return new MeshGeom(sub(g_mesh_val(a), g_mesh_val(b)));
+    return new MeshGeom(intersection(g_mesh_val(a), g_mesh_val(b)));
   else if (is_poly(a) && is_poly(b))
-    return new PolyGeom(sub(g_poly_val(a), g_poly_val(b)));
+    return new PolyGeom(intersection(g_poly_val(a), g_poly_val(b)));
   else {
-    error("Bad args for sub"); return NULL;
+    error("Bad args for intersection"); return NULL;
+  }
+}
+Geom* g_sub(Geom* a, Geom* b) {
+  error("Bad args for sub"); return NULL;
+}
+Geom* g_difference(Geom* a, Geom* b) {
+  if (a->k == mesh_kind && b->k == mesh_kind)
+    return new MeshGeom(difference(g_mesh_val(a), g_mesh_val(b)));
+  else if (is_poly(a) && is_poly(b))
+    return new PolyGeom(difference(g_poly_val(a), g_poly_val(b)));
+  else {
+    error("Bad args for difference"); return NULL;
   }
 }
 Geom* g_not(Geom* a) {

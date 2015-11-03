@@ -223,7 +223,7 @@ Nested<TV2> simplify_poly(Nested<TV2> poly) {
   return res;
 }
 
-Nested<TV2> add(Nested<TV2> c0, Nested<TV2> c1) {
+Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1) {
   auto res = polygon_union(c0, c1);
   // printf("UNION POLY\n");
   if (true)
@@ -232,17 +232,23 @@ Nested<TV2> add(Nested<TV2> c0, Nested<TV2> c1) {
     return res;
 }
 
-Nested<TV2> mul(Nested<TV2> c0, Nested<TV2> c1) {
+Nested<TV2> intersection(Nested<TV2> c0, Nested<TV2> c1) {
   return polygon_intersection(c0, c1);
 }
 
-Nested<TV2> sub(Nested<TV2> c0, Nested<TV2> c1) {
+Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1) {
   return polygon_union(c0, invert_poly(c1));
 }
 
-Mesh split_mesh (Mesh mesh, int depth) {
+Mesh maybe_simplify (Mesh mesh, bool is_simplify) {
+  if (is_simplify)
+    return simplify_mesh(mesh);
+  else
+    return mesh;
+}
+Mesh split_mesh (Mesh mesh, int depth, bool is_simplify) {
   auto split = split_soup(mesh.soup, mesh.points, depth);
-  return simplify_mesh(Mesh(split.x, split.y));
+  return maybe_simplify(Mesh(split.x, split.y), is_simplify);
 }
 
 Nested<TV2> offset(T a, Nested<TV2> c) {
@@ -251,15 +257,15 @@ Nested<TV2> offset(T a, Nested<TV2> c) {
   return c;
 }
 
-Mesh add(Mesh mesh0, Mesh mesh1) {
+Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_simplify) {
   auto merge = concat_meshes(mesh0, mesh1);
   // printf("--- START UNIONING ---\n");
-  auto res   = split_mesh(merge, 0);
+  auto res   = split_mesh(merge, 0, is_simplify);
   // printf("--- DONE  UNIONING ---\n");
   return res;
 }
 
-void pretty_print_soup(Mesh mesh) {
+void pretty_print_mesh(Mesh mesh) {
   int i = 0;
   for (auto pt : mesh.points) {
     printf("PT[%2d] %g,%g,%g\n", i, pt.x, pt.y, pt.z);
@@ -359,7 +365,7 @@ void do_print_faces(std::string name, Array<const IV> line) {
   printf(")");
 }
 
-void print_soup(Mesh mesh) {
+void print_mesh(Mesh mesh) {
   printf("mesh(");
   do_print_line3("points", mesh.points);
   printf(", ");
@@ -424,9 +430,9 @@ void print_matrix(Matrix<T,4> M) {
          M.x[0][3],M.x[1][3],M.x[2][3],M.x[3][3]);
 }
 
-Mesh mul(Mesh mesh0, Mesh mesh1) {
+Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify) {
   auto merge = concat_meshes(mesh0, mesh1);
-  return split_mesh(merge, 1);
+  return split_mesh(merge, 1, is_simplify);
 }
 
 Mesh mesh_from(int start, Mesh mesh) {
@@ -455,26 +461,24 @@ Mesh mesh_from(int start, Mesh mesh) {
 Nested<TV2> slice(T z, Mesh mesh) {
   T t = 1e8;
   auto smesh = const_mesh(cube_mesh(vec(-t, -t, -t), vec( t,  t,  z)));
-  // print_soup(smesh);
-  auto res = mul(smesh, mesh);
+  // print_mesh(smesh);
+  auto res = intersection(smesh, mesh, false);
   int start = smesh.points.size() + mesh.points.size();
-  /*
   printf("---->>>>\n");
-  print_soup(res);
+  print_mesh(res);
   printf("========\n");
-  printf("%d OLD %d NEW VERTICES\n", start, res.y.size() - start);
-  for (auto tri : res.x->elements) {
+  printf("%d OLD %d NEW VERTICES\n", start, res.points.size() - start);
+  for (auto tri : res.soup->elements) {
     bool is_all = tri.x >= start && tri.y >= start && tri.z >= start;
     if (is_all)
       printf("SLICE %2d,%2d,%2d\n", tri.x, tri.y, tri.z);
   }
-  */
   auto new_mesh = mesh_from(start, res);
   auto boundary = new_mesh.soup->boundary_mesh();
   auto polys = boundary->polygons();
-  /*
+
   int i = 0;
-  for (auto p : new_mesh.y) {
+  for (auto p : new_mesh.points) {
     printf("BP[%2d] %f,%f,%f\n", i, p.x, p.y, p.z);
     i += 1;
   }
@@ -487,7 +491,6 @@ Nested<TV2> slice(T z, Mesh mesh) {
       printf("%d ", p);
     printf("\n");
   }
-  */
 
   Nested<TV2,false> pres;
   for (auto poly : polys.x) {
@@ -502,9 +505,9 @@ Nested<TV2> slice(T z, Mesh mesh) {
   return pres;
 }
 
-Mesh sub(Mesh mesh0, Mesh mesh1) {
+Mesh difference(Mesh mesh0, Mesh mesh1, bool is_simplify) {
   auto merge = concat_meshes(mesh0, invert_mesh(mesh1));
-  return split_mesh(merge, 0);
+  return split_mesh(merge, 0, is_simplify);
 }
 
 template<class ET>
@@ -765,8 +768,8 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
       if (!is_clockwise(contour)) {
         // printf("OUTER %d\n", i);
         auto mesh = taper_mesh(len, r0, r1, contour);
-        // pretty_print_soup(mesh);
-        res = add(res, mesh);
+        // pretty_print_mesh(mesh);
+        res = union_add(res, mesh);
       }
     }
     for (int i = 0; i < contours.size(); i++) {
@@ -774,8 +777,8 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
       if (is_clockwise(contour)) {
         // printf("INNER %d\n", i);  
         auto mesh = xxx(scale_matrix(vec(1.0,1.0,2.0)), taper_mesh(len, r0, r1, contour));
-        // pretty_print_soup(mesh);
-        res = add(res, mesh);
+        // pretty_print_mesh(mesh);
+        res = union_add(res, mesh);
       }
     }
     return res;
@@ -820,12 +823,12 @@ Mesh revolve(int n, Nested<TV2> contours) {
     for (int i = 0; i < contours.size(); i++) {
       auto contour = poly_to_contour(contours, i);
       if (!is_clockwise(contour))
-        res = add(res, revolve(n, contour));
+        res = union_add(res, revolve(n, contour));
     }
     for (int i = 0; i < contours.size(); i++) {
       auto contour = poly_to_contour(contours, i);
       if (is_clockwise(contour)) 
-        res = add(res, revolve(n, contour));
+        res = union_add(res, revolve(n, contour));
     }
     return res;
     // return revolve(n, poly_to_contour(contours));
@@ -864,7 +867,7 @@ Nested<TV2> thicken(int n, T rad, Nested<TV2> line) {
       // print_polyline2(res);
       // printf("TO EDGE\n");
       // print_polyline2(edge);
-      res = add(res, edge);
+      res = union_add(res, edge);
     }
     j += 1;
   }
@@ -896,7 +899,7 @@ Nested<TV2> offset_poly(int n, T rad, Nested<TV2> poly) {
   Nested<TV2> res = poly;
   for (auto contour : poly) {
     for (int i = 0; i < contour.size(); i++) {
-      res = add(res, add(fat_dot(n, rad, contour[i]), fat_edge(n, rad, contour[i], contour[(i+1)%contour.size()])));
+      res = union_add(res, union_add(fat_dot(n, rad, contour[i]), fat_edge(n, rad, contour[i], contour[(i+1)%contour.size()])));
     }
   }
   return res;
@@ -906,9 +909,9 @@ Nested<TV2> offset_polyline(int n, T rad, Nested<TV2> polyline) {
   Nested<TV2> res = none_poly();
   for (auto line : polyline) {
     for (auto pt : line) 
-      res = add(res, fat_dot(n, rad, pt));
+      res = union_add(res, fat_dot(n, rad, pt));
     for (int i = 0; i < (line.size()-1); i++) 
-      res = add(res, fat_edge(n, rad, line[i], line[(i+1)%line.size()]));
+      res = union_add(res, fat_edge(n, rad, line[i], line[(i+1)%line.size()]));
   }
   return res;
 }
@@ -919,13 +922,13 @@ Mesh thicken(int n, T rad, Mesh mesh) {
 
   for (int i = 1; i < mesh.points.size(); i++) {
     // printf("TH %f,%f,%f\n", line[i].x, line[i].y, line[i].z);
-    res = add(res, const_mesh(sphere_mesh(n, mesh.points[i], rad)));
+    res = union_add(res, const_mesh(sphere_mesh(n, mesh.points[i], rad)));
   }
   auto edges = mesh.soup->triangle_edges();
   for (auto edge : edges)
     printf("EDGE %d to %d\n", edge.x, edge.y);
   for (auto edge : edges) {
-    res = add(res, fat_edge(16, rad, mesh.points[edge.x], mesh.points[edge.y]));
+    res = union_add(res, fat_edge(16, rad, mesh.points[edge.x], mesh.points[edge.y]));
   }
   
   return res;
@@ -937,10 +940,10 @@ Mesh thicken(int n, T rad, Nested<TV> polyline) {
     // printf("TH %f,%f,%f\n", line[0].x, line[0].y, line[0].z);
     for (int i = 0; i < line.size(); i++) {
       // printf("TH %f,%f,%f\n", line[i].x, line[i].y, line[i].z);
-      res = add(res, const_mesh(sphere_mesh(n, line[i], rad)));
+      res = union_add(res, const_mesh(sphere_mesh(n, line[i], rad)));
     }
     for (int i = 1; i < line.size(); i++) {
-      res = add(res, fat_edge(12, rad, line[i-1], line[i]));
+      res = union_add(res, fat_edge(12, rad, line[i-1], line[i]));
     }
   }
   
@@ -968,14 +971,14 @@ Mesh offset_mesh(int n, T rad, Mesh mesh) {
   // printf("%d POINTS\n", mesh.y.size());
   // for (auto pt : mesh.y) {
   //   printf("TH %f,%f,%f\n", pt.x, pt.y, pt.z);
-  //   res = add(res, const_mesh(sphere_mesh(n, pt, rad)));
+  //   res = union_add(res, const_mesh(sphere_mesh(n, pt, rad)));
   // }
   // res = simplify_mesh(res);
   auto edges = mesh.x->triangle_edges();
   int i = 0;
   for (auto edge : edges) {
     printf("EDGE %d/%d %d to %d\n", i, edges.size(), edge.x, edge.y);
-    res = add(res, fat_edge(8, rad, mesh.y[edge.x], mesh.y[edge.y]));
+    res = union_add(res, fat_edge(8, rad, mesh.y[edge.x], mesh.y[edge.y]));
     res = simplify_mesh(res);
     i += 1;
   }

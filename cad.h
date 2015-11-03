@@ -66,17 +66,15 @@ extern Array<TV2> simplify_contour(RawArray<TV2> contour);
 
 extern Nested<TV2> simplify_poly(Nested<TV2> poly);
 
-extern Nested<TV2> add(Nested<TV2> c0, Nested<TV2> c1);
-
-extern Nested<TV2> mul(Nested<TV2> c0, Nested<TV2> c1);
-
-extern Nested<TV2> sub(Nested<TV2> c0, Nested<TV2> c1);
+extern Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1);
+extern Nested<TV2> intersection(Nested<TV2> c0, Nested<TV2> c1);
+extern Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1);
 
 extern Nested<TV2> offset(T a, Nested<TV2> c);
 
-extern Mesh add(Mesh soup0, Mesh soup1);
+extern Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 
-extern void pretty_print_soup(Mesh soup);
+extern void pretty_print_mesh(Mesh soup);
 extern void pretty_print_line2(Array<TV2> line);
 extern void pretty_print_line3(Array<TV> line);
 extern void pretty_print_contour(Array<TV2> contour);
@@ -85,7 +83,7 @@ extern void pretty_print_matrix(Matrix<T,4> M);
 extern void pretty_print_polyline3(Nested<TV> polyline);
 extern void pretty_print_polyline2(Nested<TV2> polyline);
 
-extern void print_soup(Mesh soup);
+extern void print_mesh(Mesh soup);
 extern void print_contour(Array<TV2> contour);
 extern void print_line3(Array<TV> contour);
 extern void print_line2(Array<TV2> contour);
@@ -94,13 +92,13 @@ extern void print_polyline3(Nested<TV> polyline);
 extern void print_polyline2(Nested<TV2> polyline);
 extern void print_matrix(Matrix<T,4> M);
 
-extern Mesh mul(Mesh soup0, Mesh soup1);
+extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 
 extern Mesh mesh_from(int start, Mesh soup);
 
 extern Nested<TV2> slice(T z, Mesh soup);
 
-extern Mesh sub(Mesh soup0, Mesh soup1);
+extern Mesh difference(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 
 template<class ET> Nested<ET> contour_to_poly(Array<ET> contour);
 
