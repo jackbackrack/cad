@@ -185,6 +185,7 @@ extern Geom* g_cube(Geom* a);
 extern Geom* g_cube(Geom* lo, Geom* hi);
 extern Geom* g_cone(Geom* a, Geom* p);
 extern Geom* g_revolve(Geom* p);
+extern Geom* g_hull(Geom* m);
 // extern Geom* g_hollow(Geom* a, Geom* m);
 extern Geom* g_taper(Geom* l, Geom* r0, Geom* r1, Geom* p);
 

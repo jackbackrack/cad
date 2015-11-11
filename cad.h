@@ -63,6 +63,7 @@ extern Ref<const TriangleSoup> const_soup(Ref<TriangleSoup> val);
 extern Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV>> val);
 
 extern Mesh simplify_mesh(Mesh mesh);
+extern Mesh real_simplify_mesh(Mesh mesh);
 
 extern Mesh invert_mesh(Mesh mesh);
 

@@ -89,6 +89,10 @@
 
 ```cad "slice(0,revolve(xmov(4,square(2) \ square(1))))"```
 
+* 3D -> 3D
+
+```cad "hull(revolve(xmov(4, circle(4))) | extrude(20, square(2)))"```
+
 # TODO
 
 * 3D offsetting

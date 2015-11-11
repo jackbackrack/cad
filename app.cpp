@@ -9,6 +9,7 @@ props_t* props;
 
 defboolprop(is_show_status, false);
 defboolprop(is_show_lines, true);
+defboolprop(is_stdin_expr, false);
 defboolprop(is_show_normals, false);
 defboolprop(is_interpolating, false);
 defboolprop(is_timing, false);
@@ -92,6 +93,7 @@ static int install_props (void) {
   props->install(threshold_var);
   props->install(num_points_var);
   props->install(expr_var);
+  props->install(is_stdin_expr_var);
   return 1;
 }
 
@@ -124,6 +126,8 @@ void sim_t::render ( bool is_picking ) {
 
 void sim_t::exec ( void ) {
   if (list == -1) {
+    if (is_stdin_expr)
+      getline(std::cin, expr);
     list = compile_geom(expr, is_show_lines, is_show_normals);
   }
   t += 1;

@@ -8,6 +8,14 @@
 #include <geode/mesh/TriangleTopology.h>
 #include <geode/mesh/improve_mesh.h>
 
+double rndd () {
+  return (double)((double)rand() / (double)RAND_MAX);
+}
+
+double rndd (double mn, double mx) {
+  return rndd() * (mx-mn) + mn;
+}
+
 void error (std::string msg) {
   fprintf(stderr, "MSG %s\n", msg.c_str());
   exit(-1);
@@ -25,6 +33,9 @@ void ensure (bool val, std::string msg) {
 Mesh fab_mesh (Array<IV> faces, Array<TV> points) {
   // return tuple(new_<const TriangleSoup>(faces),points);
   return Mesh(new_<const TriangleSoup>(faces),points);
+}
+Mesh fab_mesh (Ref<const TriangleSoup> soup, Array<TV> points) {
+  return Mesh(soup,points);
 }
 
 typedef real T;
@@ -86,13 +97,66 @@ Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV>> val) {
   return Mesh(const_soup(val.x), val.y);
 }
 
-/*
-Mesh simplify_mesh(Mesh mesh) {
+Mesh report_simplify_mesh(Mesh mesh) {
+  Array<IV> new_faces;
+  auto points = mesh.points;
+  for (auto face : mesh.soup->elements) {
+    if (points[face.x] == points[face.y])
+      printf("zero edge %d -> %d\n", face.x, face.y);
+    else if (points[face.y] == points[face.z])
+      printf("zero edge %d -> %d\n", face.y, face.z);
+    else if (points[face.x] == points[face.z])
+      printf("zero edge %d -> %d\n", face.x, face.z);
+    else
+      new_faces.append(face);
+  }
+  printf("%d FACES NOW %d REMOVED %d FACES\n",
+         mesh.soup->elements.size(), new_faces.size(), mesh.soup->elements.size() - new_faces.size() );
+  return fab_mesh(new_faces, points);
+}
+
+Mesh dither_mesh(Mesh mesh, double delta) {
+  Array<TV> points;
+  for (auto point : mesh.points)
+    points.append(point + vec(rndd(-delta, delta), rndd(-delta, delta), rndd(-delta, delta)));
+  return fab_mesh(mesh.soup, points);
+}
+
+Mesh gc_mesh(Mesh mesh) {
+  // printf("GCING\n");
+  // pretty_print_mesh(mesh);
+  Array<bool> is_points;
+  for (int i = 0; i < mesh.points.size(); i++)
+    is_points.append(false);
+  Array<IV> new_faces;
+  for (auto face : mesh.soup->elements) 
+    is_points[face.x] = is_points[face.y] = is_points[face.z] = true;
+  int delta = 0;
+  Array<int> mapping;
+  Array<TV> new_points;
+  for (int i = 0; i < mesh.points.size(); i++) {
+    mapping.append(i - delta);
+    if (is_points[i]) {
+      // printf("MAPPING %d TO %d\n", i, i - delta);
+      new_points.append(mesh.points[i]);
+    } else {
+      // printf("REMOVING %d DELTA %d\n", i, delta);
+      delta += 1;
+    }
+  }
+  for (auto face : mesh.soup->elements) 
+    new_faces.append(vec(mapping[face.x], mapping[face.y], mapping[face.z]));
+  // printf("%d POINTS NOW %d REMOVED %d POINTS DELTA %d\n",
+  //        mesh.points.size(), new_points.size(), mesh.points.size() - new_points.size(), delta);
+  return fab_mesh(new_faces, new_points);
+}
+
+Mesh quick_simplify_mesh(Mesh mesh) {
   printf("SIMPLIFYING\n");
   Array<IV> faces;
-  for (auto face : mesh.x->elements)
+  for (auto face : mesh.soup->elements)
     faces.append(face);
-  auto points = mesh.y.copy();
+  auto points = mesh.points.copy();
   Array<int> mapping;
   for (int i = 0; i < points.size(); i++)
     mapping.append(i);
@@ -121,11 +185,16 @@ Mesh simplify_mesh(Mesh mesh) {
         printf("BAD FACE X %d\n", face.y);
       if (face.z < 0 || face.z >= points.size())
         printf("BAD FACE X %d\n", face.z);
-      faces[i] = vec(mapping[face.x], mapping[face.y], mapping[face.z]);
+      auto new_face = vec(mapping[face.x], mapping[face.y], mapping[face.z]);
+      if (new_face.x != faces[i].x || new_face.y != faces[i].y || new_face.z != faces[i].z) {
+        printf("MAPPING [%d,%d,%d] => [%d,%d,%d]\n",
+               faces[i].x, faces[i].y, faces[i].z, new_face.x, new_face.y, new_face.z);
+        faces[i] = new_face;
+      }
     }
   }
   Array<IV> new_faces;
-  for (auto face : mesh.x->elements) {
+  for (auto face : faces) {
     if (face.x != face.y && face.x != face.z && face.y != face.z) {
       new_faces.append(face);
     } else
@@ -133,29 +202,10 @@ Mesh simplify_mesh(Mesh mesh) {
   }
   printf("%d FACES NOW %d REMOVED %d FACES\n",
          faces.size(), new_faces.size(), faces.size() - new_faces.size() );
-  return fab_mesh(new_faces, points);
-}
-*/
-
-Mesh report_simplify_mesh(Mesh mesh) {
-  Array<IV> new_faces;
-  auto points = mesh.points;
-  for (auto face : mesh.soup->elements) {
-    if (points[face.x] == points[face.y])
-      printf("zero edge %d -> %d\n", face.x, face.y);
-    else if (points[face.y] == points[face.z])
-      printf("zero edge %d -> %d\n", face.y, face.z);
-    else if (points[face.x] == points[face.z])
-      printf("zero edge %d -> %d\n", face.x, face.z);
-    else
-      new_faces.append(face);
-  }
-  printf("%d FACES NOW %d REMOVED %d FACES\n",
-         mesh.soup->elements.size(), new_faces.size(), mesh.soup->elements.size() - new_faces.size() );
-  return fab_mesh(new_faces, points);
+  return gc_mesh(fab_mesh(new_faces, points));
 }
 
-Mesh simplify_mesh(Mesh mesh) {
+Mesh real_simplify_mesh(Mesh mesh) {
   // printf("STARTING SIMPLIFICATION\n");
   // report_simplify_mesh(mesh);
   Array<TV> pos(mesh.points);
@@ -164,8 +214,9 @@ Mesh simplify_mesh(Mesh mesh) {
   topo->add_vertices(mesh.points.size());
   for (auto face : mesh.soup->elements)
     topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
-  //  ImproveOptions options(1.1,0.01,0.01);
-  ImproveOptions options(1.0000001,0.0000001,0.0000001);
+  // ImproveOptions options(1.1,0.1,0.1);
+  ImproveOptions options(1.1,0.01,0.01);
+  // ImproveOptions options(1.0000001,0.0000001,0.0000001);
   improve_mesh_inplace(topo, field, options);
   // printf("BEFORE GC %d\n", field.size());
   auto updates = topo->collect_garbage();
@@ -185,7 +236,14 @@ Mesh simplify_mesh(Mesh mesh) {
   auto new_soup = topo->face_soup().x;
   // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
   //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
-  return Mesh(const_soup(new_soup), new_points);
+  return gc_mesh(Mesh(const_soup(new_soup), new_points));
+}
+
+Mesh simplify_mesh(Mesh mesh) {
+  if (true)
+    return real_simplify_mesh(mesh);
+  else
+    return quick_simplify_mesh(mesh);
 }
 
 // invert triangle soup so normals point inwards
@@ -699,7 +757,7 @@ Mesh cone_mesh(T len, Array<TV2> poly) {
     c = c + elt;
   }
   c = c / (double)n_boundary;
-  auto lid = triangulate(contour_to_poly(bot));
+  auto lid = invert_mesh(triangulate(contour_to_poly(bot)));
 
   vh = lid.points;
   vh.append(vec(c.x, c.y, zmax));
@@ -720,25 +778,23 @@ Mesh cone_mesh(T len, Nested<TV2> contours) {
   return cone_mesh(len, poly_to_contour(contours));
 }
 
-Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly) {
-  Array<TV> top, bot;
+Mesh mesh_between_poly(Array<TV> bot, Array<TV> top) {
   Array<TV> vh;
 
-  T zmin = - len / 2.0;
-  T zmax =   len / 2.0;
-  int n_boundary = poly.size();
+  // printf("BOT\n");
+  // for (auto e : bot) 
+  //   printf("  %f,%f,%f\n", e.x, e.y, e.z);
+  // printf("TOP\n");
+  // for (auto e : top) 
+  //   printf("  %f,%f,%f\n", e.x, e.y, e.z);
+  int n_boundary = bot.size();
   // printf("N_BOUNDARY = %d\n", n_boundary);
-  for (auto elt : poly)
-    top.append(vec(r0 * elt.x, r0 * elt.y, zmin));
   auto top_mesh = triangulate(contour_to_poly(top));
   int n_mesh = top_mesh.points.size();
   // printf("N_MESH = %d\n", n_mesh);
 
-  for (auto elt : poly) 
-    bot.append(vec(r1 * elt.x, r1 * elt.y, zmax));
   auto bot_mesh = triangulate(contour_to_poly(bot));
 
-  // auto lids = concat_meshes(top_mesh, invert_mesh(bot_mesh));
   auto lids = concat_meshes(top_mesh, invert_mesh(bot_mesh));
 
   // for (auto pt : vh)
@@ -758,6 +814,17 @@ Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly) {
     faces.append(vec(n_mesh + ni, n_mesh + i, i));
   }
   return fab_mesh(faces, lids.points);
+}
+
+Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly) {
+  Array<TV> top, bot;
+  T zmin = - len / 2.0;
+  T zmax =   len / 2.0;
+  for (auto elt : poly)
+    top.append(vec(r0 * elt.x, r0 * elt.y, zmin));
+  for (auto elt : poly) 
+    bot.append(vec(r1 * elt.x, r1 * elt.y, zmax));
+  return mesh_between_poly(bot, top);
 }
 
 Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
@@ -880,6 +947,15 @@ Nested<TV2> thicken(int n, T rad, Nested<TV2> line) {
   return res;
 }
 
+Mesh fat_triangle(T rad, TV p0, TV p1, TV p2) {
+  auto n = rad * cross(p1 - p0, p2 - p0).normalized();
+  Array<TV> bot, top;
+  // printf("NORMAL = %f,%f,%f\n", n.x, n.y, n.z);
+  bot.append(p0 - n); bot.append(p1 - n); bot.append(p2 - n);
+  top.append(p0 + n); top.append(p1 + n); top.append(p2 + n);
+  return mesh_between_poly(top, bot);
+}
+
 Mesh fat_edge(int n, T rad, TV from, TV to) {
   auto v = to - from;
   auto res = extrude(magnitude(v), circle_poly(rad, n));
@@ -955,8 +1031,8 @@ Mesh thicken(int n, T rad, Nested<TV> polyline) {
   return res;
 }
 
+/*
 Mesh offset_mesh(int n, T rad, Mesh mesh) {
-  /*
   Array<TV> pos(mesh.y);
   auto topo = new_<TriangleTopology>(mesh.x->elements);
   auto new_mesh = rough_offset_mesh(topo, RawField<const TV,VertexId>(pos), rad);
@@ -965,31 +1041,41 @@ Mesh offset_mesh(int n, T rad, Mesh mesh) {
   for (auto point : new_mesh.y.flat)
     new_points.append(point);
   return tuple(const_mesh(new_soup), new_points);
-  */
   return mesh;
 }
+*/
 
-/*
 Mesh offset_mesh(int n, T rad, Mesh mesh) {
-  Mesh res = none_mesh();
+  // Mesh res = none_mesh();
+  Mesh res = mesh;
+  auto edges = mesh.soup->segment_soup();
 
-  // printf("%d POINTS\n", mesh.y.size());
-  // for (auto pt : mesh.y) {
-  //   printf("TH %f,%f,%f\n", pt.x, pt.y, pt.z);
-  //   res = union_add(res, const_mesh(sphere_mesh(n, pt, rad)));
-  // }
-  // res = simplify_mesh(res);
-  auto edges = mesh.x->triangle_edges();
+  pretty_print_mesh(mesh);
+  int k = 0;
+  for (auto face : mesh.soup->elements) {
+    printf("FACE %d/%d\n", k, mesh.soup->elements.size());
+    // res = union_add(res, dither_mesh(const_mesh(sphere_mesh(n, pt, rad)), 1e-3));
+    auto fatty = fat_triangle(rad, mesh.points[face.x], mesh.points[face.y], mesh.points[face.z]);
+    // return fatty;
+    res = union_add(res, dither_mesh(fatty, 1e-3));
+    k += 1;
+  }
+  int j = 0;
+  for (auto pt : mesh.points) {
+    printf("POINT %d/%d\n", j, mesh.points.size());
+    // res = union_add(res, dither_mesh(const_mesh(sphere_mesh(n, pt, rad)), 1e-3));
+    res = union_add(res, const_mesh(sphere_mesh(n, pt, rad)));
+    j += 1;
+  }
   int i = 0;
-  for (auto edge : edges) {
-    printf("EDGE %d/%d %d to %d\n", i, edges.size(), edge.x, edge.y);
-    res = union_add(res, fat_edge(8, rad, mesh.y[edge.x], mesh.y[edge.y]));
-    res = simplify_mesh(res);
+  for (auto edge : edges->elements) {
+    printf("EDGE %d/%d %d to %d\n", i, edges->elements.size(), edge.x, edge.y);
+    // res = union_add(res, dither_mesh(fat_edge(8, rad, mesh.points[edge.x], mesh.points[edge.y]), 1e-3));
+    res = union_add(res, fat_edge(8, rad, mesh.points[edge.x], mesh.points[edge.y]));
     i += 1;
   }
   return res;
 }
-*/
 
 static std::string letter_codes[256];
 static Nested<TV2> letter_outlines[256];

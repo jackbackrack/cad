@@ -1,4 +1,5 @@
 #include "cad.h"
+#include "hull.h"
 #include "geom.h"
 
 #include <cstdio>
@@ -9,13 +10,7 @@
 #include <map>
 #include <set>
 
-double rndd () {
-  return (double)((double)rand() / (double)RAND_MAX);
-}
-
-double rndd (double mn, double mx) {
-  return rndd() * (mx-mn) + mn;
-}
+extern Mesh quick_hull(Mesh mesh);
 
 double g_num_val(Geom* g) {
   ensure(g->k == float_kind, "NOT FLOAT");
@@ -339,7 +334,7 @@ Geom* g_offset(Geom* a, Geom* g) {
     error("Bad args for offset"); return NULL;
   }
 }
-Geom* g_simplify(Geom* g) { return new MeshGeom(simplify_mesh(g_mesh_val(g))); }
+Geom* g_simplify(Geom* g) { return new MeshGeom(real_simplify_mesh(g_mesh_val(g))); }
 Geom* g_slice(Geom* a, Geom* g) { return new PolyGeom(slice(g_num_val(a), g_mesh_val(g))); }
 Geom* g_extrude(Geom* a, Geom* p) { return new MeshGeom(extrude(g_num_val(a), g_poly_val(p))); }
 Geom* g_thicken(Geom* a, Geom* l) {
@@ -348,11 +343,12 @@ Geom* g_thicken(Geom* a, Geom* l) {
   else //  (is_polyline3(l))
     return new MeshGeom(thicken(1, g_num_val(a), g_polyline3_val(l)));
 }
-Geom* g_sphere(Geom* a) { return new MeshGeom(sphere_mesh(2, vec(0.0, 0.0, 0.0), g_num_val(a))); }
+Geom* g_sphere(Geom* a) { return new MeshGeom(sphere_mesh(1, vec(0.0, 0.0, 0.0), g_num_val(a))); }
 Geom* g_cube(Geom* a) { auto r = g_num_val(a); return new MeshGeom(cube_mesh(vec(-r, -r, -r), vec(r, r, r))); }
 Geom* g_cube(Geom* lo, Geom* hi) { return new MeshGeom(cube_mesh(g_vec3_val(lo), g_vec3_val(hi))); }
 Geom* g_cone(Geom* a, Geom* p) { return new MeshGeom(cone_mesh(g_num_val(a), g_poly_val(p))); }
 Geom* g_revolve(Geom* p) { return new MeshGeom(revolve(16, g_poly_val(p))); }
+Geom* g_hull(Geom* m) { return new MeshGeom(quick_hull(g_mesh_val(m))); }
 // Geom* g_hollow(Geom* a, Geom* m) { return new MeshGeom(hollow(g_num_val(a), g_mesh(m))); }
 // Geom* g_shear_x_z(Geom* z0, Geom* z1, Geom* dx0, Geom* dx1, Geom* m) {
 //   return new MeshGeom(shear_x_z(g_num_val(z0), g_num_val(z1), g_num_val(dx0), g_num_val(dx1), g_mesh(m))); }

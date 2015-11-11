@@ -258,7 +258,7 @@ Geom* parse_factor(Tokenizer& s) {
             for (size_t i = 0; i < args.size(); i++)
               points.append(g_vec2_val(args[i]));
             return new ContourGeom(points);
-          } else if (tok1.sym == "poly") {
+          } else if (tok1.sym == "polygon") {
             Nested< TV2, false > contours;
             for (size_t i = 0; i < args.size(); i++)
               contours.append(g_contour_val(args[i]));
@@ -338,6 +338,8 @@ Geom* parse_factor(Tokenizer& s) {
             g = g_reflect_yz(args[0]);
           } else if (tok1.sym == "revolve") {
             g = g_revolve(args[0]);
+          } else if (tok1.sym == "hull") {
+            g = g_hull(args[0]);
           } else if (tok1.sym == "taper") {
             g = g_taper(args[0], args[1], args[2], args[3]);
           } else if (tok1.sym == "load") {
