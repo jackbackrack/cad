@@ -200,13 +200,13 @@ Geom* g_sub(Geom* a, Geom* b) {
   // TODO: FILL IN FOR NUMS AND VECS
   error("Bad args for sub"); return NULL;
 }
-Geom* do_g_mul(Matrix<T,4> m, Geom* g) { 
+Geom* do_g_mul(Matrix<T,4> m, Geom* g, bool is_invert = false) { 
   if (g->k == mesh_kind)
-    return new MeshGeom(mul(m, g_mesh_val(g)));
+    return new MeshGeom(mul(m, g_mesh_val(g), is_invert));
   else if (g->k == poly_kind)
-    return new PolyGeom(mul(m, g_poly_val(g)));
+    return new PolyGeom(mul_poly(m, g_poly_val(g), is_invert));
   else if (g->k == contour_kind)
-    return new ContourGeom(mul(m, g_contour_val(g)));
+    return new ContourGeom(mul_contour(m, g_contour_val(g), is_invert));
   else if (g->k == line2_kind)
     return new Line2Geom(mul(m, g_line2_val(g)));
   else if (g->k == line3_kind)
@@ -270,22 +270,22 @@ Geom* g_zrot(Geom* a, Geom* g) {
   return do_g_mul(Matrix<T,4>(c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1), g);
 }
 Geom* g_reflect_x(Geom* g) {
-  return do_g_mul(Matrix<T,4>(-1,0,0,0,1,0,0,0,1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1), g, true);
 }
 Geom* g_reflect_y(Geom* g) { 
-  return do_g_mul(Matrix<T,4>(1,0,0,0,-1,0,0,0,1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, true);
 }
 Geom* g_reflect_xy(Geom* g) {
-  return do_g_mul(Matrix<T,4>(-1,0,0,0,-1,0,0,0,1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, false); // TODO: NORMALS BROKEN FOR POLYS
 }
 Geom* g_reflect_z(Geom* g) {
-  return do_g_mul(Matrix<T,4>(1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, true);
 }
 Geom* g_reflect_yz(Geom* g) {
-  return do_g_mul(Matrix<T,4>(1,0,0,0,-1,0,0,0,-1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,-1,0,0,0,0,1), g, false);
 }
 Geom* g_reflect_xz(Geom* g) {
-  return do_g_mul(Matrix<T,4>(-1,0,0,0,1,0,0,0,-1,0,0,0,0,0,0,1), g);
+  return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, false);
 }
 Geom* g_union(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)

@@ -257,6 +257,13 @@ Mesh invert_mesh(Mesh mesh) {
   return fab_mesh(triangles, mesh.points);
 }
 
+Array<TV2> invert_contour(Array<TV2> contour) {
+  Array<TV2> res;
+  for (int i = contour.size()-1; i >= 0; i--)
+    res.append(contour[i]);
+  return res;
+}
+
 Nested<TV2> invert_poly(Nested<TV2> poly) {
   Nested<TV2,false> pres;
   for (auto contour : poly) {
@@ -267,6 +274,16 @@ Nested<TV2> invert_poly(Nested<TV2> poly) {
   }
   pres.freeze();
   return pres;
+}
+
+Nested<TV2> mul_poly(Matrix<T,4> m, Nested<TV2> poly, bool is_invert) {
+  auto res = mul(m, poly);
+  return is_invert ? invert_poly(res) : res;
+}
+
+Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour, bool is_invert) {
+  auto res = mul(m, contour);
+  return is_invert ? invert_contour(res) : res;
 }
 
 Array<TV2> simplify_contour(RawArray<TV2> contour) {
@@ -740,8 +757,9 @@ TV2 mul(Matrix<T,4> m, TV2 pt) {
   return vec(res.x, res.y);
 }
 
-Mesh mul(Matrix<T,4> m, Mesh mesh) {
-  return Mesh(mesh.soup, mul(m, mesh.points));
+Mesh mul(Matrix<T,4> m, Mesh mesh, bool is_invert) {
+  auto res = Mesh(mesh.soup, mul(m, mesh.points));
+  return is_invert ? invert_mesh(res) : res;
 }
 
 Mesh cone_mesh(T len, Array<TV2> poly) {

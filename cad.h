@@ -67,10 +67,10 @@ extern Mesh real_simplify_mesh(Mesh mesh);
 
 extern Mesh invert_mesh(Mesh mesh);
 
+extern Array<TV2> invert_contour(Array<TV2> contour);
 extern Nested<TV2> invert_poly(Nested<TV2> poly);
 
 extern Array<TV2> simplify_contour(RawArray<TV2> contour);
-
 extern Nested<TV2> simplify_poly(Nested<TV2> poly);
 
 extern Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1);
@@ -152,7 +152,11 @@ template<class E> Nested<E> mul(Matrix<T,4> m, Nested<E> poly) {
   return pres;
 }
 
-extern Mesh mul(Matrix<T,4> m, Mesh soup);
+extern Nested<TV2> mul_poly(Matrix<T,4> m, Nested<TV2> poly, bool is_invert = false);
+
+extern Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour, bool is_invert = false);
+
+extern Mesh mul(Matrix<T,4> m, Mesh soup, bool is_invert = false);
 
 extern Mesh cone_mesh(T len, Array<TV2> poly);
 
