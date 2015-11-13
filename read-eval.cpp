@@ -232,7 +232,7 @@ Geom* parse_factor(Tokenizer& s) {
             } else
               error("Wrong number of mat args\n");
           } else if (tok1.sym == "line3" || tok1.sym == "line" || tok1.sym == "points" || tok1.sym == "faces") {
-            Array< TV > points;
+            Array< TV3 > points;
             for (size_t i = 0; i < args.size(); i++)
               points.append(g_vec3_val(args[i]));
             return new Line3Geom(points);
@@ -242,7 +242,7 @@ Geom* parse_factor(Tokenizer& s) {
               points.append(g_vec2_val(args[i]));
             return new Line2Geom(points);
           } else if (tok1.sym == "polyline3" || tok1.sym == "polyline") {
-            Nested< TV,false > lines;
+            Nested< TV3,false > lines;
             for (size_t i = 0; i < args.size(); i++)
               lines.append(g_line3_val(args[i]));
             lines.freeze();
@@ -473,7 +473,7 @@ Geom* parse_expression(Tokenizer& s) {
   return g;
 }
 
-inline TV get_color(TV n) {
+inline TV3 get_color(TV3 n) {
   return vec((n.x > 0.0 ? n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0),
              (n.y > 0.0 ? n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0),
              (n.z > 0.0 ? n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0));
@@ -529,7 +529,7 @@ int display_mesh (Mesh mesh, bool is_show_lines, bool is_show_normals) {
 // CLIP forces the number x into the range [min,max]
 inline double CLIP(double x, double mn, double mx) { return max(mn, min(mx, x)); }
 
-TV hsv_to_rgb (double h, double s, double v) {
+TV3 hsv_to_rgb (double h, double s, double v) {
   double rt, gt, bt;
   s = CLIP(s, (double)0, (double)1);
   if (s == 0.0) {
@@ -591,7 +591,7 @@ int display_polyline2 (Nested<TV2> polyline) {
   return dl;
 }
 
-int display_polyline3 (Nested<TV> polyline) {
+int display_polyline3 (Nested<TV3> polyline) {
   int dl = glGenLists(1);
   glNewList(dl, GL_COMPILE);
   glColor4f(1.0, 1.0, 1.0, 1.0);

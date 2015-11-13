@@ -52,8 +52,8 @@ class Vec2Geom : public Geom {
 
 class Vec3Geom : public Geom {
  public:
-  TV val;
- Vec3Geom(TV val) : Geom(vec3_kind), val(val) { }
+  TV3 val;
+ Vec3Geom(TV3 val) : Geom(vec3_kind), val(val) { }
 };
 
 class MatGeom : public Geom {
@@ -70,8 +70,8 @@ class Line2Geom : public Geom {
 
 class Line3Geom : public Geom {
  public:
-  Array<TV> val;
- Line3Geom(Array<TV> val) : Geom(line3_kind), val(val) { }
+  Array<TV3> val;
+ Line3Geom(Array<TV3> val) : Geom(line3_kind), val(val) { }
 };
 
 class PolyLine2Geom : public Geom {
@@ -82,8 +82,8 @@ class PolyLine2Geom : public Geom {
 
 class PolyLine3Geom : public Geom {
  public:
-  Nested<TV> val;
- PolyLine3Geom(Nested<TV> val) : Geom(polyline3_kind), val(val) { }
+  Nested<TV3> val;
+ PolyLine3Geom(Nested<TV3> val) : Geom(polyline3_kind), val(val) { }
 };
 
 class ContourGeom : public Geom {
@@ -101,7 +101,7 @@ class PolyGeom : public Geom {
 class MeshGeom : public Geom {
  public:
   Mesh val;
- MeshGeom(Tuple<Ref<TriangleSoup>, Array<TV>> val) : Geom(mesh_kind), val(const_mesh(val)) { }
+ MeshGeom(Tuple<Ref<TriangleSoup>, Array<TV3>> val) : Geom(mesh_kind), val(const_mesh(val)) { }
  MeshGeom(Mesh val) : Geom(mesh_kind), val(val) { }
 };
 
@@ -111,22 +111,22 @@ extern Geom* g_string(std::string s);
 extern std::string g_string_val(Geom* g);
 extern Geom* g_vec2(TV2 v);
 extern TV2 g_vec2_val(Geom* g);
-extern Geom* g_vec3(TV v);
-extern TV g_vec3_val(Geom* g);
+extern Geom* g_vec3(TV3 v);
+extern TV3 g_vec3_val(Geom* g);
 extern Geom* g_mat(Matrix<T,4> mat);
 extern Matrix<T,4> g_mat_val(Geom* g);
 extern Geom* g_line2(Array<TV2> line);
 extern Array<TV2> g_line2_val(Geom* g);
-extern Geom* g_line3(Array<TV> line);
-extern Array<TV> g_line3_val(Geom* g);
-extern Geom* g_faces(Array<IV> faces);
-extern Array<IV> g_faces_val(Geom* g);
+extern Geom* g_line3(Array<TV3> line);
+extern Array<TV3> g_line3_val(Geom* g);
+extern Geom* g_faces(Array<IV3> faces);
+extern Array<IV3> g_faces_val(Geom* g);
 extern bool is_polyline2(Geom* g);
 extern Geom* g_polyline2(Nested<TV2> polyline);
 extern Nested<TV2> g_polyline2_val(Geom* g);
-extern Geom* g_polyline3(Nested<TV> polyline);
+extern Geom* g_polyline3(Nested<TV3> polyline);
 extern bool is_polyline3(Geom* g);
-extern Nested<TV> g_polyline3_val(Geom* g);
+extern Nested<TV3> g_polyline3_val(Geom* g);
 extern Geom* g_contour(Nested<TV2> contour);
 extern Array<TV2> g_contour_val(Geom* g);
 extern Geom* g_poly(Nested<TV2> poly);

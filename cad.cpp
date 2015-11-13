@@ -30,18 +30,18 @@ void ensure (bool val, std::string msg) {
   if (!val) error(msg);
 }
 
-Mesh fab_mesh (Array<IV> faces, Array<TV> points) {
+Mesh fab_mesh (Array<IV3> faces, Array<TV3> points) {
   // return tuple(new_<const TriangleSoup>(faces),points);
   return Mesh(new_<const TriangleSoup>(faces),points);
 }
-Mesh fab_mesh (Ref<const TriangleSoup> soup, Array<TV> points) {
+Mesh fab_mesh (Ref<const TriangleSoup> soup, Array<TV3> points) {
   return Mesh(soup,points);
 }
 
 typedef real T;
 typedef Vector<T,2> TV2;
 typedef Vector<T,3> TV;
-typedef Vector<int,3> IV;
+typedef Vector<int,3> IV3;
 typedef Vector<int,2> IV2;
 
 Matrix<T,4> to_matrix44(Matrix<T,3> M) {
@@ -73,13 +73,13 @@ double is_clockwise (Array<TV2> contour) {
 
 // Combines multiple triangle soups into one
 static Mesh concat_meshes(Mesh mesh0, Mesh mesh1) {
-  Array<IV> triangles;
-  Array<TV> vertices;
+  Array<IV3> triangles;
+  Array<TV3> vertices;
 
   for(const auto& s : { mesh0, mesh1 }) {
     // 0th vertex in each soup will be first vertex after all previous ones
     // Save as a vector of ints to we can directly add it to each triangle
-    const auto index_offset = IV::repeat(vertices.size());
+    const auto index_offset = IV3::repeat(vertices.size());
     vertices.extend(s.points);
     for(const auto& t : s.soup->elements) {
       triangles.append(t+index_offset); // Add new triangle with indices mapped to combined vertices
@@ -93,12 +93,12 @@ Ref<const TriangleSoup> const_soup(Ref<TriangleSoup> val) {
   return new_<const TriangleSoup>(val->elements);
 }
 
-Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV>> val) {
+Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV3>> val) {
   return Mesh(const_soup(val.x), val.y);
 }
 
 Mesh report_simplify_mesh(Mesh mesh) {
-  Array<IV> new_faces;
+  Array<IV3> new_faces;
   auto points = mesh.points;
   for (auto face : mesh.soup->elements) {
     if (points[face.x] == points[face.y])
@@ -116,7 +116,7 @@ Mesh report_simplify_mesh(Mesh mesh) {
 }
 
 Mesh dither_mesh(Mesh mesh, double delta) {
-  Array<TV> points;
+  Array<TV3> points;
   for (auto point : mesh.points)
     points.append(point + vec(rndd(-delta, delta), rndd(-delta, delta), rndd(-delta, delta)));
   return fab_mesh(mesh.soup, points);
@@ -128,12 +128,12 @@ Mesh gc_mesh(Mesh mesh) {
   Array<bool> is_points;
   for (int i = 0; i < mesh.points.size(); i++)
     is_points.append(false);
-  Array<IV> new_faces;
+  Array<IV3> new_faces;
   for (auto face : mesh.soup->elements) 
     is_points[face.x] = is_points[face.y] = is_points[face.z] = true;
   int delta = 0;
   Array<int> mapping;
-  Array<TV> new_points;
+  Array<TV3> new_points;
   for (int i = 0; i < mesh.points.size(); i++) {
     mapping.append(i - delta);
     if (is_points[i]) {
@@ -153,7 +153,7 @@ Mesh gc_mesh(Mesh mesh) {
 
 Mesh quick_simplify_mesh(Mesh mesh) {
   printf("SIMPLIFYING\n");
-  Array<IV> faces;
+  Array<IV3> faces;
   for (auto face : mesh.soup->elements)
     faces.append(face);
   auto points = mesh.points.copy();
@@ -193,7 +193,7 @@ Mesh quick_simplify_mesh(Mesh mesh) {
       }
     }
   }
-  Array<IV> new_faces;
+  Array<IV3> new_faces;
   for (auto face : faces) {
     if (face.x != face.y && face.x != face.z && face.y != face.z) {
       new_faces.append(face);
@@ -208,8 +208,8 @@ Mesh quick_simplify_mesh(Mesh mesh) {
 Mesh real_simplify_mesh(Mesh mesh) {
   // printf("STARTING SIMPLIFICATION\n");
   // report_simplify_mesh(mesh);
-  Array<TV> pos(mesh.points);
-  Field<TV,VertexId> field(pos.copy());
+  Array<TV3> pos(mesh.points);
+  Field<TV3,VertexId> field(pos.copy());
   auto topo = new_<MutableTriangleTopology>();
   topo->add_vertices(mesh.points.size());
   for (auto face : mesh.soup->elements)
@@ -227,7 +227,7 @@ Mesh real_simplify_mesh(Mesh mesh) {
     // printf("  %d -> %d\n", i, update);
     i += 1;
   }
-  Array<TV> new_points(tot);
+  Array<TV3> new_points(tot);
   i = 0;
   for (auto update : updates.x) {
     if (update >= 0) new_points[update] = pos[i];
@@ -248,7 +248,7 @@ Mesh simplify_mesh(Mesh mesh) {
 
 // invert triangle soup so normals point inwards
 Mesh invert_mesh(Mesh mesh) {
-  Array<IV> triangles;
+  Array<IV3> triangles;
 
   for(const auto& t : mesh.soup->elements) {
     triangles.append(vec(t[0], t[2], t[1]));
@@ -363,7 +363,7 @@ void pretty_print_line2(Array<TV2> line) {
   }
 }
 
-void pretty_print_line3(Array<TV> line) {
+void pretty_print_line3(Array<TV3> line) {
   int i = 0;
   for (auto pt : line) {
     printf("PT[%2d] %g,%g,%g\n", i, pt.x, pt.y, pt.z);
@@ -392,10 +392,10 @@ void pretty_print_matrix(Matrix<T,4> M) {
   printf("%g, %g, %g, %g\n", M.x[0][3],M.x[1][3],M.x[2][3],M.x[3][3]);
 }
 
-void pretty_print_polyline3(Nested<TV> polyline) {
+void pretty_print_polyline3(Nested<TV3> polyline) {
   int i = 0;
   for (auto elt : polyline) {
-    Array<TV> line; for (auto e : elt) line.append(e);
+    Array<TV3> line; for (auto e : elt) line.append(e);
     printf("LINE %d\n", i);
     pretty_print_line3(line);
     i += 1;
@@ -423,7 +423,7 @@ void do_print_line2(std::string name, Array<TV2> line) {
   printf(")");
 }
 
-void do_print_line3(std::string name, Array<TV> line) {
+void do_print_line3(std::string name, Array<TV3> line) {
   int i = 0;
   printf("%s(", name.c_str());
   for (auto pt : line) {
@@ -434,7 +434,7 @@ void do_print_line3(std::string name, Array<TV> line) {
   printf(")");
 }
 
-void do_print_faces(std::string name, Array<const IV> line) {
+void do_print_faces(std::string name, Array<const IV3> line) {
   int i = 0;
   printf("%s(", name.c_str());
   for (auto pt : line) {
@@ -457,7 +457,7 @@ void print_contour(Array<TV2> contour) {
   do_print_line2("contour", contour);
 }
 
-void print_line3(Array<TV> contour) {
+void print_line3(Array<TV3> contour) {
   do_print_line3("line3", contour);
 }
 
@@ -478,11 +478,11 @@ void print_poly(Nested<TV2> poly) {
   printf(")\n");
 }
 
-void print_polyline3(Nested<TV> polyline) {
+void print_polyline3(Nested<TV3> polyline) {
   int i = 0;
   printf("polyline3(");
   for (auto elt : polyline) {
-    Array<TV> line; for (auto e : elt) line.append(e);
+    Array<TV3> line; for (auto e : elt) line.append(e);
     if (i > 0) printf(", ");
     print_line3(line);
     i += 1;
@@ -516,7 +516,7 @@ Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify) {
 }
 
 Mesh mesh_from(int start, Mesh mesh) {
-  Array<TV> pts;
+  Array<TV3> pts;
   for (int i = start; i < mesh.points.size(); i++) {
     pts.append(mesh.points[i]);
   }
@@ -529,7 +529,7 @@ Mesh mesh_from(int start, Mesh mesh) {
     }
   }
   */
-  Array<IV> faces;
+  Array<IV3> faces;
   for (auto tri : mesh.soup->elements) {
     bool is_all = tri.x >= start && tri.y >= start && tri.z >= start;
     if (is_all)
@@ -615,8 +615,8 @@ Mesh all_mesh(void) {
 }
 
 Mesh none_mesh(void) {
-  Array<IV> faces;
-  Array<TV> points;
+  Array<IV3> faces;
+  Array<TV3> points;
   return fab_mesh(faces, points);
 }
 
@@ -667,7 +667,7 @@ Nested<TV2> star_poly(T rad_min, T rad_max, int n) {
 
 struct Meshy {
 public:
-  Array<TV> points;
+  Array<TV3> points;
   Array<int> indices;
 };
 
@@ -713,7 +713,7 @@ static GLUtesselator* triangulator_new (void) {
   return tess;
 }
 
-Mesh triangulate (Nested<TV> poly) { 
+Mesh triangulate (Nested<TV3> poly) { 
   auto tess = triangulator_new();
   Meshy mesh;
   gluTessBeginPolygon(tess, reinterpret_cast<void*>(&mesh));
@@ -728,7 +728,7 @@ Mesh triangulate (Nested<TV> poly) {
   }
   gluTessEndPolygon(tess);
   gluDeleteTess(tess);
-  Array<IV> faces;
+  Array<IV3> faces;
   for (int i = 0; i < mesh.indices.size()/3; i++) {
     faces.append(vec(mesh.indices[i*3], mesh.indices[i*3 + 2], mesh.indices[i*3 + 1]));
   }
@@ -736,7 +736,7 @@ Mesh triangulate (Nested<TV> poly) {
 }
 
 /*
-Tuple<Ref<TriangleSoup>,Array<TV>> triangulate(Array<TV2> poly) {
+Tuple<Ref<TriangleSoup>,Array<TV3>> triangulate(Array<TV2> poly) {
   Array<IV2> edges;
   int n = poly.size();
   for (int i = 0; i < n; i++)
@@ -763,8 +763,8 @@ Mesh mul(Matrix<T,4> m, Mesh mesh, bool is_invert) {
 }
 
 Mesh cone_mesh(T len, Array<TV2> poly) {
-  Array<TV> bot;
-  Array<TV> vh;
+  Array<TV3> bot;
+  Array<TV3> vh;
 
   T zmin = - len / 2.0;
   T zmax =   len / 2.0;
@@ -780,7 +780,7 @@ Mesh cone_mesh(T len, Array<TV2> poly) {
   vh = lid.points;
   vh.append(vec(c.x, c.y, zmax));
     
-  Array<IV> faces;
+  Array<IV3> faces;
   for (auto face : lid.soup->elements)
     faces.append(face);
                  
@@ -796,8 +796,8 @@ Mesh cone_mesh(T len, Nested<TV2> contours) {
   return cone_mesh(len, poly_to_contour(contours));
 }
 
-Mesh mesh_between_poly(Array<TV> bot, Array<TV> top) {
-  Array<TV> vh;
+Mesh mesh_between_poly(Array<TV3> bot, Array<TV3> top) {
+  Array<TV3> vh;
 
   // printf("BOT\n");
   // for (auto e : bot) 
@@ -818,7 +818,7 @@ Mesh mesh_between_poly(Array<TV> bot, Array<TV> top) {
   // for (auto pt : vh)
   //   printf("PT [%f,%f,%f]\n", pt.x, pt.y, pt.z);
 
-  Array<IV> faces;
+  Array<IV3> faces;
   for (auto face : lids.soup->elements)
     faces.append(face);
                  
@@ -835,7 +835,7 @@ Mesh mesh_between_poly(Array<TV> bot, Array<TV> top) {
 }
 
 Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly) {
-  Array<TV> top, bot;
+  Array<TV3> top, bot;
   T zmin = - len / 2.0;
   T zmax =   len / 2.0;
   for (auto elt : poly)
@@ -880,7 +880,7 @@ Mesh extrude(T len, Nested<TV2> poly) {
 }
 
 Mesh revolve(int n, Array<TV2> poly) {
-  Array<TV> pts;
+  Array<TV3> pts;
 
   for (int i = 0; i < n; i++) {
     T a = (2 * M_PI * i) / n;
@@ -892,7 +892,7 @@ Mesh revolve(int n, Array<TV2> poly) {
 
   int m = poly.size();
 
-  Array<IV> faces;
+  Array<IV3> faces;
 
   for (int j = 0; j < n; j++) {
     int nj = (j + 1)%n; 
@@ -967,7 +967,7 @@ Nested<TV2> thicken(int n, T rad, Nested<TV2> line) {
 
 Mesh fat_triangle(T rad, TV p0, TV p1, TV p2) {
   auto n = rad * cross(p1 - p0, p2 - p0).normalized();
-  Array<TV> bot, top;
+  Array<TV3> bot, top;
   // printf("NORMAL = %f,%f,%f\n", n.x, n.y, n.z);
   bot.append(p0 - n); bot.append(p1 - n); bot.append(p2 - n);
   top.append(p0 + n); top.append(p1 + n); top.append(p2 + n);
@@ -1033,7 +1033,7 @@ Mesh thicken(int n, T rad, Mesh mesh) {
   return res;
 }
 
-Mesh thicken(int n, T rad, Nested<TV> polyline) {
+Mesh thicken(int n, T rad, Nested<TV3> polyline) {
   Mesh res = none_mesh();
   for (auto line : polyline) {
     // printf("TH %f,%f,%f\n", line[0].x, line[0].y, line[0].z);
@@ -1051,11 +1051,11 @@ Mesh thicken(int n, T rad, Nested<TV> polyline) {
 
 /*
 Mesh offset_mesh(int n, T rad, Mesh mesh) {
-  Array<TV> pos(mesh.y);
+  Array<TV3> pos(mesh.y);
   auto topo = new_<TriangleTopology>(mesh.x->elements);
-  auto new_mesh = rough_offset_mesh(topo, RawField<const TV,VertexId>(pos), rad);
+  auto new_mesh = rough_offset_mesh(topo, RawField<const TV3,VertexId>(pos), rad);
   auto new_soup = new_mesh.x->face_soup().x;
-  Array<TV> new_points;
+  Array<TV3> new_points;
   for (auto point : new_mesh.y.flat)
     new_points.append(point);
   return tuple(const_mesh(new_soup), new_points);

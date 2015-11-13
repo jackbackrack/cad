@@ -27,7 +27,7 @@ TV2 g_vec2_val(Geom* g) {
   return ((Vec2Geom*)g)->val;
 }
 
-TV g_vec3_val(Geom* g) {
+TV3 g_vec3_val(Geom* g) {
   ensure(g->k == vec3_kind, "NOT VEC3");
   return ((Vec3Geom*)g)->val;
 }
@@ -42,15 +42,15 @@ Array<TV2> g_line2_val(Geom* g) {
   return ((Line2Geom*)g)->val;
 }
 
-Array<TV> g_line3_val(Geom* g) {
+Array<TV3> g_line3_val(Geom* g) {
   ensure(g->k == line3_kind, "NOT LINE3");
   return ((Line3Geom*)g)->val;
 }
 
-Array<IV> g_faces_val(Geom* g) {
+Array<IV3> g_faces_val(Geom* g) {
   ensure(g->k == line3_kind, "NOT FACES");
   auto points =  ((Line3Geom*)g)->val;
-  Array<IV> faces;
+  Array<IV3> faces;
   for (auto p : points)
     faces.append(vec((int)p.x, (int)p.y, (int)p.z));
   return faces;
@@ -72,7 +72,7 @@ bool is_polyline3(Geom* g) {
   return g->k == polyline3_kind || g->k == line3_kind;
 }
 
-Nested<TV> g_polyline3_val(Geom* g) {
+Nested<TV3> g_polyline3_val(Geom* g) {
   ensure(is_polyline3(g), "NOT POLYLINE3");
   if (g->k == line3_kind)
     return line_to_polyline(g_line3_val(g));
@@ -157,13 +157,13 @@ Geom* g_pretty_print(Geom* g) {
 Geom* g_num(double a) { return new FloatGeom(a); }
 Geom* g_string(std::string s) { return new StringGeom(s); }
 Geom* g_vec2(TV2 v) { return new Vec2Geom(v); }
-Geom* g_vec3(TV v) { return new Vec3Geom(v); }
+Geom* g_vec3(TV3 v) { return new Vec3Geom(v); }
 Geom* g_mat(Matrix<T,4> mat)  { return new MatGeom(mat); }
 Geom* g_line2(Array<TV2> line) { return new Line2Geom(line); }
-Geom* g_line3(Array<TV> line) { return new Line3Geom(line); }
-Geom* g_faces(Array<TV> faces) { return new Line3Geom(faces); }
+Geom* g_line3(Array<TV3> line) { return new Line3Geom(line); }
+Geom* g_faces(Array<TV3> faces) { return new Line3Geom(faces); }
 Geom* g_polyline2(Nested<TV2> polyline) { return new PolyLine2Geom(polyline); }
-Geom* g_polyline3(Nested<TV> polyline) { return new PolyLine3Geom(polyline); }
+Geom* g_polyline3(Nested<TV3> polyline) { return new PolyLine3Geom(polyline); }
 Geom* g_contour(Array<TV2> contour) { return new ContourGeom(contour); }
 Geom* g_poly(Nested<TV2> poly) { return new PolyGeom(poly); }
 Geom* g_mesh(Mesh mesh) { return new MeshGeom(mesh); }

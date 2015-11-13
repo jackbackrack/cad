@@ -29,24 +29,24 @@ extern void ensure (bool val, std::string msg);
 
 typedef real T;
 typedef Vector<T,2> TV2;
-typedef Vector<T,3> TV;
-typedef Vector<int,3> IV;
+typedef Vector<T,3> TV3;
 typedef Vector<int,2> IV2;
-// typedef Tuple<Ref<const TriangleSoup>, Array<TV>> Mesh;
+typedef Vector<int,3> IV3;
+// typedef Tuple<Ref<const TriangleSoup>, Array<TV3>> Mesh;
 struct Mesh {
 public:
   Ref<const TriangleSoup> soup;
-  Array<TV> points;
-  Mesh(Ref<const TriangleSoup> soup, Array<TV> points) : soup(soup), points(points) { }
+  Array<TV3> points;
+  Mesh(Ref<const TriangleSoup> soup, Array<TV3> points) : soup(soup), points(points) { }
 };
 
-extern Mesh fab_mesh (Array<IV> faces, Array<TV> points);
+extern Mesh fab_mesh (Array<IV3> faces, Array<TV3> points);
 
 extern Matrix<T,4> to_matrix44(Matrix<T,3> M);
-extern Matrix<T,4> rotation_matrix(TV from, TV to);
+extern Matrix<T,4> rotation_matrix(TV3 from, TV3 to);
 extern Matrix<T,4> rotation_matrix(TV2 from, TV2 to);
-extern Matrix<T,4> scale_matrix(TV v);
-extern Matrix<T,4> translation_matrix(TV v);
+extern Matrix<T,4> scale_matrix(TV3 v);
+extern Matrix<T,4> translation_matrix(TV3 v);
 extern Matrix<T,4> translation_matrix(TV2 v);
 
 template<class ET>
@@ -60,7 +60,7 @@ Nested<ET> line_to_polyline(Array<ET> line) {
 extern double is_clockwise (Array<TV2> contour);
 
 extern Ref<const TriangleSoup> const_soup(Ref<TriangleSoup> val);
-extern Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV>> val);
+extern Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV3>> val);
 
 extern Mesh simplify_mesh(Mesh mesh);
 extern Mesh real_simplify_mesh(Mesh mesh);
@@ -83,19 +83,19 @@ extern Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 
 extern void pretty_print_mesh(Mesh soup);
 extern void pretty_print_line2(Array<TV2> line);
-extern void pretty_print_line3(Array<TV> line);
+extern void pretty_print_line3(Array<TV3> line);
 extern void pretty_print_contour(Array<TV2> contour);
 extern void pretty_print_poly(Nested<TV2> poly);
 extern void pretty_print_matrix(Matrix<T,4> M);
-extern void pretty_print_polyline3(Nested<TV> polyline);
+extern void pretty_print_polyline3(Nested<TV3> polyline);
 extern void pretty_print_polyline2(Nested<TV2> polyline);
 
 extern void print_mesh(Mesh soup);
 extern void print_contour(Array<TV2> contour);
-extern void print_line3(Array<TV> contour);
+extern void print_line3(Array<TV3> contour);
 extern void print_line2(Array<TV2> contour);
 extern void print_poly(Nested<TV2> poly);
-extern void print_polyline3(Nested<TV> polyline);
+extern void print_polyline3(Nested<TV3> polyline);
 extern void print_polyline2(Nested<TV2> polyline);
 extern void print_matrix(Matrix<T,4> M);
 
@@ -128,9 +128,9 @@ extern Nested<TV2> circle_poly(T rad, int n);
 extern Nested<TV2> star_poly(T rad_min, T rad_max, int n);
 
 
-extern Mesh triangulate (Nested<TV> poly);
+extern Mesh triangulate (Nested<TV3> poly);
 
-extern TV mul(Matrix<T,4> m, TV pt);
+extern TV3 mul(Matrix<T,4> m, TV3 pt);
 
 extern TV2 mul(Matrix<T,4> m, TV2 pt);
 
@@ -174,7 +174,7 @@ extern Mesh revolve(int n, Nested<TV2> contours);
 
 extern Nested<TV2> fat_square_edge(int n, T rad, TV2 from, TV2 to);
 
-extern Mesh fat_edge(int n, T rad, TV from, TV to);
+extern Mesh fat_edge(int n, T rad, TV3 from, TV3 to);
 
 extern Nested<TV2> fat_edge(int n, T rad, TV2 from, TV2 to);
 
@@ -186,7 +186,7 @@ extern Nested<TV2> offset_polyline(int n, T rad, Nested<TV2> polyline);
 
 extern Mesh thicken(int n, T rad, Mesh mesh);
 
-extern Mesh thicken(int n, T rad, Nested<TV> polyline);
+extern Mesh thicken(int n, T rad, Nested<TV3> polyline);
 
 extern Nested<TV2> thicken(int n, T rad, Nested<TV2> line);
 
