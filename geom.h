@@ -3,17 +3,17 @@
 
 enum GeomKind {
   args_kind,
-  float_kind,
+  num_kind,
   string_kind,
-  vec2_kind,
-  vec3_kind,
+  v2d_kind,
+  v3d_kind,
+  v3i_kind,
   mat_kind,
-  line2_kind,
-  line3_kind,
-  faces_kind,
-  polyline2_kind,
-  polyline3_kind,
-  contour_kind,
+  array_v2d_kind,
+  array_v3d_kind,
+  array_v3i_kind,
+  nested_v2d_kind,
+  nested_v3d_kind,
   poly_kind,
   mesh_kind };
 
@@ -37,13 +37,13 @@ class Geom {
 class ArgsGeom : public Geom {
  public:
   std::vector<Geom*> val;
- ArgsGeom(void) : Geom(float_kind) { }
+ ArgsGeom(void) : Geom(args_kind) { }
 };
 
-class FloatGeom : public Geom {
+class NumGeom : public Geom {
  public:
   double val;
- FloatGeom(double val) : Geom(float_kind), val(val) { }
+ NumGeom(double val) : Geom(num_kind), val(val) { }
 };
 
 class StringGeom : public Geom {
@@ -52,16 +52,22 @@ class StringGeom : public Geom {
  StringGeom(std::string val) : Geom(string_kind), val(val) { }
 };
 
-class Vec2Geom : public Geom {
+class V2dGeom : public Geom {
  public:
   TV2 val;
- Vec2Geom(TV2 val) : Geom(vec2_kind), val(val) { }
+ V2dGeom(TV2 val) : Geom(v2d_kind), val(val) { }
 };
 
-class Vec3Geom : public Geom {
+class V3dGeom : public Geom {
  public:
   TV3 val;
- Vec3Geom(TV3 val) : Geom(vec3_kind), val(val) { }
+ V3dGeom(TV3 val) : Geom(v3d_kind), val(val) { }
+};
+
+class V3iGeom : public Geom {
+ public:
+  IV3 val;
+ V3iGeom(IV3 val) : Geom(v3i_kind), val(val) { }
 };
 
 class MatGeom : public Geom {
@@ -70,40 +76,34 @@ class MatGeom : public Geom {
  MatGeom(Matrix<T,4> val) : Geom(mat_kind), val(val) { }
 };
 
-class Line2Geom : public Geom {
+class ArrayV2dGeom : public Geom {
  public:
   Array<TV2> val;
- Line2Geom(Array<TV2> val) : Geom(line2_kind), val(val) { }
+ ArrayV2dGeom(Array<TV2> val) : Geom(array_v2d_kind), val(val) { }
 };
 
-class Line3Geom : public Geom {
+class ArrayV3dGeom : public Geom {
  public:
   Array<TV3> val;
- Line3Geom(Array<TV3> val) : Geom(line3_kind), val(val) { }
+ ArrayV3dGeom(Array<TV3> val) : Geom(array_v3d_kind), val(val) { }
 };
 
-class FacesGeom : public Geom {
+class ArrayV3iGeom : public Geom {
  public:
   Array<IV3> val;
- FacesGeom(Array<IV3> val) : Geom(faces_kind), val(val) { }
+ ArrayV3iGeom(Array<IV3> val) : Geom(array_v3i_kind), val(val) { }
 };
 
-class PolyLine2Geom : public Geom {
+class NestedV2dGeom : public Geom {
  public:
   Nested<TV2> val;
- PolyLine2Geom(Nested<TV2> val) : Geom(polyline2_kind), val(val) { }
+ NestedV2dGeom(Nested<TV2> val) : Geom(nested_v2d_kind), val(val) { }
 };
 
-class PolyLine3Geom : public Geom {
+class NestedV3dGeom : public Geom {
  public:
   Nested<TV3> val;
- PolyLine3Geom(Nested<TV3> val) : Geom(polyline3_kind), val(val) { }
-};
-
-class ContourGeom : public Geom {
- public:
-  Array<TV2> val;
- ContourGeom(Array<TV2> val) : Geom(contour_kind), val(val) { }
+ NestedV3dGeom(Nested<TV3> val) : Geom(nested_v3d_kind), val(val) { }
 };
 
 class PolyGeom : public Geom {
@@ -119,6 +119,14 @@ class MeshGeom : public Geom {
  MeshGeom(Mesh val) : Geom(mesh_kind), val(val) { }
 };
 
+extern bool all_args_kind (std::vector<Geom*> args, int kind);
+extern Geom* g_array_v2d (std::vector<Geom*> args);
+extern Geom* g_array_v3d (std::vector<Geom*> args);
+extern Geom* g_array_v3i (std::vector<Geom*> args);
+extern Geom* g_nested_v2d (std::vector<Geom*> args);
+extern Geom* g_nested_v3d (std::vector<Geom*> args);
+extern Geom* g_poly (std::vector<Geom*> args);
+
 extern std::vector<Geom*> g_args_val(Geom* g);
 extern "C" Geom* g_args_fab(void);
 extern "C" Geom* g_args_add(Geom* g);
@@ -133,20 +141,28 @@ extern "C" Geom* g_string_fab(char* str);
 extern "C" int g_string_len(Geom* g);
 extern "C" char* g_string_c_str(Geom*);
 
-extern Geom* g_vec2(TV2 v);
-extern TV2 g_vec2_val(Geom* g);
-extern "C" Geom* g_vec2_fab(T x, T y);
-extern "C" T g_vec2_elt(Geom* g, int idx);
-extern "C" T g_vec2_x(Geom* g);
-extern "C" T g_vec2_y(Geom* g);
+extern Geom* g_v2d(TV2 v);
+extern TV2 g_v2d_val(Geom* g);
+extern "C" Geom* g_v2d_fab(T x, T y);
+extern "C" T g_v2d_elt(Geom* g, int idx);
+extern "C" T g_v2d_x(Geom* g);
+extern "C" T g_v2d_y(Geom* g);
 
-extern Geom* g_vec3(TV3 v);
-extern TV3 g_vec3_val(Geom* g);
-extern "C" Geom* g_vec3_fab(T x, T y, T z);
-extern "C" T g_vec3_elt(Geom* g, int idx);
-extern "C" T g_vec3_x(Geom* g);
-extern "C" T g_vec3_y(Geom* g);
-extern "C" T g_vec3_z(Geom* g);
+extern Geom* g_v3d(TV3 v);
+extern TV3 g_v3d_val(Geom* g);
+extern "C" Geom* g_v3d_fab(T x, T y, T z);
+extern "C" T g_v3d_elt(Geom* g, int idx);
+extern "C" T g_v3d_x(Geom* g);
+extern "C" T g_v3d_y(Geom* g);
+extern "C" T g_v3d_z(Geom* g);
+
+extern Geom* g_v3i(IV3 v);
+extern IV3 g_v3i_val(Geom* g);
+extern "C" Geom* g_v3i_fab(int x, int y, int z);
+extern "C" int g_v3i_elt(Geom* g, int idx);
+extern "C" int g_v3i_x(Geom* g);
+extern "C" int g_v3i_y(Geom* g);
+extern "C" int g_v3i_z(Geom* g);
 
 extern "C" Geom* g_bbox2_min(Geom* g);
 extern "C" Geom* g_bbox2_max(Geom* g);
@@ -159,53 +175,46 @@ extern "C" Geom* g_mat_fab(T i00, T i01, T i02, T i03, T i10, T i11, T i12, T i1
                            T i20, T i21, T i22, T i23, T i30, T i31, T i32, T i33);
 extern "C" T g_mat_fab_elt(Geom* g, int idx);
 
-extern Geom* g_line2(Array<TV2> line);
-extern Geom* g_line2(RawArray<TV2> line);
-extern Array<TV2> g_line2_val(Geom* g);
-extern "C" Geom* g_line2_fab(Geom* args);
-extern "C" Geom* g_line2_elt(Geom* g, int idx);
-extern "C" int g_line2_fab_len(Geom* g);
+extern Geom* g_array_v2d(Array<TV2> line);
+extern Geom* g_array_v2d(RawArray<TV2> line);
+extern Array<TV2> g_array_v2d_val(Geom* g);
+extern "C" Geom* g_array_v2d_fab(Geom* args);
+extern "C" Geom* g_array_v2d_elt(Geom* g, int idx);
+extern "C" int g_array_v2d_fab_len(Geom* g);
 
-extern Geom* g_line3(Array<TV3> line);
-extern Geom* g_line3(RawArray<TV3> line);
-extern Array<TV3> g_line3_val(Geom* g);
-extern "C" Geom* g_line3_fab(Geom* args);
-extern "C" Geom* g_line3_elt(Geom* g, int idx);
-extern "C" int g_line3_fab_len(Geom* g);
+extern Geom* g_array_v3d(Array<TV3> line);
+extern Geom* g_array_v3d(RawArray<TV3> line);
+extern Array<TV3> g_array_v3d_val(Geom* g);
+extern "C" Geom* g_array_v3d_fab(Geom* args);
+extern "C" Geom* g_array_v3d_elt(Geom* g, int idx);
+extern "C" int g_array_v3d_len(Geom* g);
 
-extern Geom* g_faces(Array<IV3> faces);
-extern Array<IV3> g_faces_val(Geom* g);
-extern "C" Geom* g_faces_fab(Geom* args);
-extern "C" Geom* g_faces_elt(Geom* g, int idx);
-extern "C" int g_faces_fab_len(Geom* g);
+extern Geom* g_array_v3i(Array<IV3> a);
+extern Array<IV3> g_array_v3i_val(Geom* g);
+extern "C" Geom* g_array_v3i_fab(Geom* args);
+extern "C" Geom* g_array_v3i_elt(Geom* g, int idx);
+extern "C" int g_array_v3i_len(Geom* g);
 
-extern bool is_polyline2(Geom* g);
-extern Geom* g_polyline2(Nested<TV2> polyline);
-extern Nested<TV2> g_polyline2_val(Geom* g);
-extern "C" Geom* g_polyline2_fab(Geom* args);
-extern "C" Geom* g_polyline2_elt(Geom* g, int idx);
-extern "C" int g_polyline2_fab_len(Geom* g);
+extern bool is_nested_v2d(Geom* g);
+extern Geom* g_nested_v2d(Nested<TV2> polyline);
+extern Nested<TV2> g_nested_v2d_val(Geom* g);
+extern "C" Geom* g_nested_v2d_fab(Geom* args);
+extern "C" Geom* g_nested_v2d_elt(Geom* g, int idx);
+extern "C" int g_nested_v2d_len(Geom* g);
 
-extern Geom* g_polyline3(Nested<TV3> polyline);
-extern bool is_polyline3(Geom* g);
-extern Nested<TV3> g_polyline3_val(Geom* g);
-extern "C" Geom* g_polyline3_fab(Geom* args);
-extern "C" Geom* g_polyline3_elt(Geom* g, int idx);
-extern "C" int g_polyline3_fab_len(Geom* g);
+extern Geom* g_nested_v3d(Nested<TV3> polyline);
+extern bool is_nested_v3d(Geom* g);
+extern Nested<TV3> g_nested_v3d_val(Geom* g);
+extern "C" Geom* g_nested_v3d_fab(Geom* args);
+extern "C" Geom* g_nested_v3d_elt(Geom* g, int idx);
+extern "C" int g_nested_v3d_fab_len(Geom* g);
 
-extern Geom* g_contour(Array<TV2> contour);
-extern Geom* g_contour(RawArray<TV2> contour);
-extern Array<TV2> g_contour_val(Geom* g);
-extern "C" Geom* g_contour_fab(Geom* args);
-extern "C" Geom* g_contour_elt(Geom* g, int idx);
-extern "C" int g_contour_fab_len(Geom* g);
-
-extern Geom* g_poly(Nested<TV2> poly);
 extern bool is_poly(Geom* g);
+extern Geom* g_poly(Nested<TV2> poly);
 extern Nested<TV2> g_poly_val(Geom* g);
 extern "C" Geom* g_poly_fab(Geom* args);
 extern "C" Geom* g_poly_elt(Geom* g, int idx);
-extern "C" int g_poly_fab_len(Geom* g);
+extern "C" int g_poly_len(Geom* g);
 
 extern Geom* g_mesh(Mesh mesh);
 extern Mesh g_mesh_val(Geom* g);

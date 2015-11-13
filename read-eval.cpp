@@ -147,13 +147,13 @@ Token Tokenizer::peek() {
 
 extern Geom* parse_expression(Tokenizer& s);
 
-std::vector< Geom* > parse_args(Tokenizer& s) {
+std::vector< Geom* > parse_args(Tokenizer& s, char end_char) {
   std::vector< Geom* > res;
   bool is_first = true;
   for (;;) {
     auto tok = s.peek();
-    if (tok.type == ')') {
-      s.expect(')');
+    if (tok.type == end_char) {
+      s.expect(end_char);
       return res;
     } else {
       if (!is_first)
@@ -185,6 +185,33 @@ Geom* parse_factor(Tokenizer& s) {
     auto g = parse_expression(s);
     s.expect(')');
     return g;
+  } else if (tok1.type == '[') {
+    s.expect('[');
+    auto args = parse_args(s, ']');
+    if (args.size() == 0) {
+      error("Illegal zero vec args\n"); return NULL;
+    } else {
+      if (all_args_kind(args, num_kind)) {
+        if (args.size() == 3) {
+          return new V3dGeom(vec(g_num_val(args[0]), g_num_val(args[1]), g_num_val(args[2])));
+        } else if (args.size() == 2) {
+          return new V2dGeom(vec(g_num_val(args[0]), g_num_val(args[1])));
+        } else
+          error("Wrong number of vec args\n");
+      } else if (all_args_kind(args, v2d_kind)) {
+        return g_array_v2d(args);
+      } else if (all_args_kind(args, v3d_kind)) {
+        return g_array_v3d(args);
+      } else if (all_args_kind(args, v3i_kind)) {
+        return g_array_v3i(args);
+      } else if (all_args_kind(args, array_v2d_kind)) {
+        return g_nested_v2d(args);
+      } else if (all_args_kind(args, array_v3d_kind)) {
+        return g_nested_v3d(args);
+      } else {
+        error("Illegal vec args\n"); return NULL;
+      }
+    }
   } else if (tok1.type == tok_str) {
     s.get();
     return new StringGeom(tok1.sym);
@@ -206,65 +233,40 @@ Geom* parse_factor(Tokenizer& s) {
       if (tok2.type == '(') {
         s.get();
         {
-          auto args = parse_args(s);
+          auto args = parse_args(s, ')');
           if (tok1.sym == "xrot") {
             g = g_xrot(args[0], args[1]);
             // g = g_reflect_yz(args[0]);
-          } else if (tok1.sym == "vec") {
-            if (args.size() == 3) {
-              return new Vec3Geom(vec(g_num_val(args[0]), g_num_val(args[1]), g_num_val(args[2])));
-            } else if (args.size() == 2) {
-              return new Vec2Geom(vec(g_num_val(args[0]), g_num_val(args[1])));
-            } else
-              error("Wrong number of vec args\n");
           } else if (tok1.sym == "mat") {
             if (args.size() == 9) {
-              return new MatGeom(Matrix<T,4>(g_num_val(args[ 0]), g_num_val(args[ 1]), g_num_val(args[ 2]), 0,
-                                             g_num_val(args[ 3]), g_num_val(args[ 4]), g_num_val(args[ 5]), 0,
-                                             g_num_val(args[ 6]), g_num_val(args[ 7]), g_num_val(args[ 8]), 0,
-                                             g_num_val(args[ 9]), g_num_val(args[10]), g_num_val(args[11]), 1));
+              return new MatGeom(
+                Matrix<T,4>(g_num_val(args[ 0]), g_num_val(args[ 1]), g_num_val(args[ 2]), 0,
+                            g_num_val(args[ 3]), g_num_val(args[ 4]), g_num_val(args[ 5]), 0,
+                            g_num_val(args[ 6]), g_num_val(args[ 7]), g_num_val(args[ 8]), 0,
+                            g_num_val(args[ 9]), g_num_val(args[10]), g_num_val(args[11]), 1));
             } else if (args.size() == 16) {
-              return new MatGeom(Matrix<T,4>
-                                 (g_num_val(args[ 0]), g_num_val(args[ 1]), g_num_val(args[ 2]), g_num_val(args[ 3]),
-                                  g_num_val(args[ 4]), g_num_val(args[ 5]), g_num_val(args[ 6]), g_num_val(args[ 7]),
-                                  g_num_val(args[ 8]), g_num_val(args[ 9]), g_num_val(args[10]), g_num_val(args[11]),
-                                  g_num_val(args[12]), g_num_val(args[13]), g_num_val(args[14]), g_num_val(args[15])));
+              return new MatGeom(
+                Matrix<T,4> (
+                  g_num_val(args[ 0]), g_num_val(args[ 1]), g_num_val(args[ 2]), g_num_val(args[ 3]),
+                  g_num_val(args[ 4]), g_num_val(args[ 5]), g_num_val(args[ 6]), g_num_val(args[ 7]),
+                  g_num_val(args[ 8]), g_num_val(args[ 9]), g_num_val(args[10]), g_num_val(args[11]),
+                  g_num_val(args[12]), g_num_val(args[13]), g_num_val(args[14]), g_num_val(args[15])));
             } else
               error("Wrong number of mat args\n");
-          } else if (tok1.sym == "line3" || tok1.sym == "line" || tok1.sym == "points" || tok1.sym == "faces") {
-            Array< TV3 > points;
-            for (size_t i = 0; i < args.size(); i++)
-              points.append(g_vec3_val(args[i]));
-            return new Line3Geom(points);
-          } else if (tok1.sym == "line2") {
-            Array< TV2 > points;
-            for (size_t i = 0; i < args.size(); i++)
-              points.append(g_vec2_val(args[i]));
-            return new Line2Geom(points);
-          } else if (tok1.sym == "polyline3" || tok1.sym == "polyline") {
-            Nested< TV3,false > lines;
-            for (size_t i = 0; i < args.size(); i++)
-              lines.append(g_line3_val(args[i]));
-            lines.freeze();
-            return new PolyLine3Geom(lines);
-          } else if (tok1.sym == "polyline2") {
-            Nested< TV2,false > lines;
-            for (size_t i = 0; i < args.size(); i++)
-              lines.append(g_line2_val(args[i]));
-            lines.freeze();
-            return new PolyLine2Geom(lines);
-          } else if (tok1.sym == "contour") {
-            Array< TV2 > points;
-            for (size_t i = 0; i < args.size(); i++)
-              points.append(g_vec2_val(args[i]));
-            return new ContourGeom(points);
-          } else if (tok1.sym == "polygon") {
-            Nested< TV2, false > contours;
-            for (size_t i = 0; i < args.size(); i++)
-              contours.append(g_contour_val(args[i]));
-            return new PolyGeom(contours);
+          } else if (tok1.sym == "array_v3d") {
+            return g_array_v3d(args);
+          } else if (tok1.sym == "array_v3i") {
+            return g_array_v3i(args);
+          } else if (tok1.sym == "array_v2d") {
+            return g_array_v2d(args);
+          } else if (tok1.sym == "nested_v3d") {
+            return g_nested_v3d(args);
+          } else if (tok1.sym == "nested_v2d") {
+            return g_nested_v2d(args);
+          } else if (tok1.sym == "poly" || tok1.sym == "polygon") {
+            return g_poly(args);
           } else if (tok1.sym == "mesh") {
-            auto mesh = fab_mesh(g_faces_val(args[1]), g_line3_val(args[0]));
+            auto mesh = fab_mesh(g_array_v3i_val(args[1]), g_array_v3d_val(args[0]));
             return new MeshGeom(mesh);
           } else if (tok1.sym == "elt") {
             return g_elt(args[0], args[1]);
@@ -613,14 +615,14 @@ int compile_geom (std::string expr, bool is_show_lines, bool is_show_normals) {
   init_cad();
   printf("EXPR = %s\n", expr.c_str());
   Geom* shape = parse_geom(expr);
-  if (shape->k == mesh_kind)
-    return display_mesh(g_mesh_val(shape), is_show_lines, is_show_normals);
+  if (is_nested_v2d(shape))
+    return display_polyline2(g_nested_v2d_val(shape));
+  else if (is_nested_v3d(shape))
+    return display_polyline3(g_nested_v3d_val(shape));
   else if (is_poly(shape))
     return display_poly(g_poly_val(shape));
-  else if (is_polyline2(shape))
-    return display_polyline2(g_polyline2_val(shape));
-  else if (is_polyline3(shape))
-    return display_polyline3(g_polyline3_val(shape));
+  else if (shape->k == mesh_kind)
+    return display_mesh(g_mesh_val(shape), is_show_lines, is_show_normals);
   else {
     error("UNDISPLAYABLE GEOM");
     return 0;

@@ -83,22 +83,31 @@ extern Nested<TV2> offset(T a, Nested<TV2> c);
 
 extern Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 
-extern void pretty_print_mesh(Mesh soup);
-extern void pretty_print_line2(Array<TV2> line);
-extern void pretty_print_line3(Array<TV3> line);
-extern void pretty_print_contour(Array<TV2> contour);
-extern void pretty_print_poly(Nested<TV2> poly);
+extern void pretty_print_num(T pt);
+extern void pretty_print_v2d(TV2 pt);
+extern void pretty_print_v3d(TV3 pt);
+extern void pretty_print_v3i(IV3 pt);
+extern void pretty_print_array_v2d(Array<TV2> line);
+extern void pretty_print_array_v3d(Array<TV3> line);
+extern void pretty_print_array_v3i(Array<IV3> line);
 extern void pretty_print_matrix(Matrix<T,4> M);
-extern void pretty_print_polyline3(Nested<TV3> polyline);
-extern void pretty_print_polyline2(Nested<TV2> polyline);
+extern void pretty_print_nested_v3d(Nested<TV3> polyline);
+extern void pretty_print_nested_v2d(Nested<TV2> polyline);
+extern void pretty_print_poly(Nested<TV2> poly);
+extern void pretty_print_mesh(Mesh soup);
 
-extern std::string mesh_to_str(Mesh soup);
-extern std::string contour_to_str(Array<TV2> contour);
-extern std::string line3_to_str(Array<TV3> contour);
-extern std::string line2_to_str(Array<TV2> contour);
+extern std::string num_to_str (T num);
+extern std::string v2d_to_str (TV2 pt);
+extern std::string v3d_to_str (TV3 pt);
+extern std::string v3i_to_str (IV3 pt);
+extern std::string array_v2d_to_str(Array<TV2> line);
+extern std::string array_v3d_to_str(Array<TV3> line);
+extern std::string array_v3i_to_str(Array<const IV3> line);
+extern std::string mesh_to_str(Mesh mesh);
+extern std::string array_v2d_to_str(Array<TV2> contour);
 extern std::string poly_to_str(Nested<TV2> poly);
-extern std::string polyline3_to_str(Nested<TV3> polyline);
-extern std::string polyline2_to_str(Nested<TV2> polyline);
+extern std::string nested_v3d_to_str(Nested<TV3> polyline);
+extern std::string nested_v2d_to_str(Nested<TV2> polyline);
 extern std::string matrix_to_str(Matrix<T,4> M);
 
 extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
@@ -109,9 +118,9 @@ extern Nested<TV2> slice(T z, Mesh soup);
 
 extern Mesh difference(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 
-template<class ET> Nested<ET> contour_to_poly(Array<ET> contour);
+template<class ET> Nested<ET> array_to_nested(Array<ET> contour);
 
-template<class ET> Array<ET> poly_to_contour(Nested<ET> poly, int i = 0);
+template<class ET> Array<ET> nested_elt(Nested<ET> poly, int idx);
 
 extern Mesh all_mesh(void);
 

@@ -345,6 +345,19 @@ Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_simplify) {
   return res;
 }
 
+void pretty_print_num(T n) {
+  printf("%g\n", n);
+}
+void pretty_print_v2d(TV2 pt) {
+  printf("%g,%g\n", pt.x, pt.y);
+}
+void pretty_print_v3d(TV3 pt) {
+  printf("%g,%g,%g\n", pt.x, pt.y, pt.z);
+}
+void pretty_print_v3i(IV3 pt) {
+  printf("%d,%d,%d\n", pt.x, pt.y, pt.z);
+}
+
 void pretty_print_mesh(Mesh mesh) {
   int i = 0;
   for (auto pt : mesh.points) {
@@ -355,36 +368,6 @@ void pretty_print_mesh(Mesh mesh) {
     printf("TRI %2d,%2d,%2d\n", tri.x, tri.y, tri.z);
 }
 
-void pretty_print_line2(Array<TV2> line) {
-  int i = 0;
-  for (auto pt : line) {
-    printf("PT[%2d] %g,%g\n", i, pt.x, pt.y);
-    i += 1;
-  }
-}
-
-void pretty_print_line3(Array<TV3> line) {
-  int i = 0;
-  for (auto pt : line) {
-    printf("PT[%2d] %g,%g,%g\n", i, pt.x, pt.y, pt.z);
-    i += 1;
-  }
-}
-
-void pretty_print_contour(Array<TV2> contour) {
-  pretty_print_line2(contour);
-}
-
-void pretty_print_poly(Nested<TV2> poly) {
-  int i = 0;
-  for (auto elt : poly) {
-    Array<TV2> contour; for (auto e : elt) contour.append(e);
-    printf("CONTOUR %d\n", i);
-    pretty_print_line2(contour);
-    i += 1;
-  }
-}
-
 void pretty_print_matrix(Matrix<T,4> M) {
   printf("%g, %g, %g, %g\n", M.x[0][0],M.x[1][0],M.x[2][0],M.x[3][0]);
   printf("%g, %g, %g, %g\n", M.x[0][1],M.x[1][1],M.x[2][1],M.x[3][1]);
@@ -392,85 +375,131 @@ void pretty_print_matrix(Matrix<T,4> M) {
   printf("%g, %g, %g, %g\n", M.x[0][3],M.x[1][3],M.x[2][3],M.x[3][3]);
 }
 
-void pretty_print_polyline3(Nested<TV3> polyline) {
+void pretty_print_array_v2d(Array<TV2> line) {
+  int i = 0;
+  for (auto pt : line) {
+    printf("PT[%2d] %g,%g\n", i, pt.x, pt.y);
+    i += 1;
+  }
+}
+
+void pretty_print_array_v3d(Array<TV3> line) {
+  int i = 0;
+  for (auto pt : line) {
+    printf("PT[%2d] %g,%g,%g\n", i, pt.x, pt.y, pt.z);
+    i += 1;
+  }
+}
+
+void pretty_print_array_v3i(Array<IV3> line) {
+  int i = 0;
+  for (auto pt : line) {
+    printf("PT[%2d] %d,%d,%d\n", i, pt.x, pt.y, pt.z);
+    i += 1;
+  }
+}
+
+void pretty_print_poly(Nested<TV2> poly) {
+  int i = 0;
+  for (auto elt : poly) {
+    Array<TV2> contour; for (auto e : elt) contour.append(e);
+    printf("CONTOUR %d\n", i);
+    pretty_print_array_v2d(contour);
+    i += 1;
+  }
+}
+
+void pretty_print_nested_v3d(Nested<TV3> polyline) {
   int i = 0;
   for (auto elt : polyline) {
     Array<TV3> line; for (auto e : elt) line.append(e);
     printf("LINE %d\n", i);
-    pretty_print_line3(line);
+    pretty_print_array_v3d(line);
     i += 1;
   }
 }
 
-void pretty_print_polyline2(Nested<TV2> polyline) {
+void pretty_print_nested_v2d(Nested<TV2> polyline) {
   int i = 0;
   for (auto elt : polyline) {
     Array<TV2> line; for (auto e : elt) line.append(e);
     printf("LINE %d\n", i);
-    pretty_print_line2(line);
+    pretty_print_array_v2d(line);
     i += 1;
   }
 }
 
-std::string do_line2_to_str(std::string name, Array<TV2> line) {
+std::string num_to_str (T num) {
   std::stringstream ss;
-  int i = 0;
-  ss << name << "(";
-  for (auto pt : line) {
-    if (i > 0) ss << ", ";
-    ss << "vec(" << pt.x << "," << pt.y << ")";
-    i += 1;
-  }
-  ss << ")";
+  ss << num;
   return ss.str();
 }
 
-std::string do_line3_to_str(std::string name, Array<TV3> line) {
+std::string v2d_to_str (TV2 pt) {
   std::stringstream ss;
-  int i = 0;
-  ss << name << "(";
-  for (auto pt : line) {
-    if (i > 0) ss << ", ";
-    ss << "vec(" << pt.x << "," << pt.y << "," << pt.z << ")";
-    i += 1;
-  }
-  ss << ")";
+  ss << "[" << pt.x << "," << pt.y << "]";
   return ss.str();
 }
 
-std::string do_faces_to_str(std::string name, Array<const IV3> line) {
+std::string v3d_to_str (TV3 pt) {
+  std::stringstream ss;
+  ss << "[" << pt.x << "," << pt.y << "," << pt.z << "]";
+  return ss.str();
+}
+
+std::string v3i_to_str (IV3 pt) {
+  std::stringstream ss;
+  ss << "[" << pt.x << "," << pt.y << "," << pt.z << "]";
+  return ss.str();
+}
+
+std::string array_v2d_to_str(Array<TV2> line) {
   std::stringstream ss;
   int i = 0;
-  ss << name << "(";
+  ss << "[";
   for (auto pt : line) {
     if (i > 0) ss << ", ";
-    ss << "vec(" << pt.x << "," << pt.y << "," << pt.z << ")";
+    ss << v2d_to_str(pt);
     i += 1;
   }
-  ss << ")";
+  ss << "]";
+  return ss.str();
+}
+
+std::string array_v3d_to_str(Array<TV3> line) {
+  std::stringstream ss;
+  int i = 0;
+  ss << "[";
+  for (auto pt : line) {
+    if (i > 0) ss << ", ";
+    ss << v3d_to_str(pt);
+    i += 1;
+  }
+  ss << "]";
+  return ss.str();
+}
+
+std::string array_v3i_to_str(Array<const IV3> line) {
+  std::stringstream ss;
+  int i = 0;
+  ss << "[";
+  for (auto pt : line) {
+    if (i > 0) ss << ", ";
+    ss << v3i_to_str(pt);
+    i += 1;
+  }
+  ss << "]";
   return ss.str();
 }
 
 std::string mesh_to_str(Mesh mesh) {
   std::stringstream ss;
   ss << "mesh(";
-  ss << do_line3_to_str("points", mesh.points);
+  ss << array_v3d_to_str(mesh.points);
   ss << ", ";
-  ss << do_faces_to_str("faces", mesh.soup->elements);
+  ss << array_v3i_to_str(mesh.soup->elements);
   ss << ")";
   return ss.str();
-}
-
-std::string contour_to_str(Array<TV2> contour) {
-  return do_line2_to_str("contour", contour);
-}
-
-std::string line3_to_str(Array<TV3> contour) {
-  return do_line3_to_str("line3", contour);
-}
-
-std::string line2_to_str(Array<TV2> contour) {
-  return do_line2_to_str("line2", contour);
 }
 
 std::string poly_to_str(Nested<TV2> poly) {
@@ -481,38 +510,38 @@ std::string poly_to_str(Nested<TV2> poly) {
     Array<TV2> contour; for (auto e : elt) contour.append(e);
     Array<TV2> line; for (auto e : elt) line.append(e);
     if (i > 0) ss << ", ";
-    ss << contour_to_str(line);
+    ss << array_v2d_to_str(line);
     i += 1;
   }
   ss << ")";
   return ss.str();
 }
 
-std::string polyline3_to_str(Nested<TV3> polyline) {
+std::string nested_v3d_to_str(Nested<TV3> polyline) {
   std::stringstream ss;
   int i = 0;
-  ss << "polyline3(";
+  ss << "[";
   for (auto elt : polyline) {
     Array<TV3> line; for (auto e : elt) line.append(e);
     if (i > 0) ss << ", ";
-    ss << line3_to_str(line);
+    ss << array_v3d_to_str(line);
     i += 1;
   }
-  ss << ")";
+  ss << "]";
   return ss.str();
 }
 
-std::string polyline2_to_str(Nested<TV2> polyline) {
+std::string nested_v2d_to_str(Nested<TV2> polyline) {
   std::stringstream ss;
   int i = 0;
-  ss << "polyline2(";
+  ss << "[";
   for (auto elt : polyline) {
     Array<TV2> line; for (auto e : elt) line.append(e);
     if (i > 0) ss << ", ";
-    ss << line2_to_str(line);
+    ss << array_v2d_to_str(line);
     i += 1;
   }
-  ss << ")";
+  ss << "]";
   return ss.str();
 }
 
@@ -610,7 +639,7 @@ Mesh difference(Mesh mesh0, Mesh mesh1, bool is_simplify) {
 }
 
 template<class ET>
-Nested<ET> contour_to_poly(Array<ET> contour) {
+Nested<ET> array_to_nested(Array<ET> contour) {
   Nested<ET,false> poly;
   poly.append(contour);
   poly.freeze();
@@ -618,7 +647,7 @@ Nested<ET> contour_to_poly(Array<ET> contour) {
 }
 
 template<class ET>
-Array<ET> poly_to_contour(Nested<ET> poly, int i) {
+Array<ET> nested_elt(Nested<ET> poly, int i) {
   Array<ET> contour;
   // printf("POLY TO CONTOUR[%d] %d\n", i, poly[i].size());
   for (auto e : poly[i])
@@ -643,7 +672,7 @@ Nested<TV2> square_poly(TV2 min, TV2 max) {
   pts.append(vec(max.x,max.y));
   pts.append(vec(min.x,max.y));
   pts.append(vec(min.x,min.y));
-  return contour_to_poly(pts);
+  return array_to_nested(pts);
 }
 
 Nested<TV2> square_poly(T rad) {
@@ -667,7 +696,7 @@ Nested<TV2> circle_poly(T rad, int n) {
     // printf("A = %f\n", a);
     pts.append(vec(rad * sin(a),rad * cos(a)));
   }
-  return contour_to_poly(pts);
+  return array_to_nested(pts);
 }
 
 Nested<TV2> star_poly(T rad_min, T rad_max, int n) {
@@ -679,7 +708,7 @@ Nested<TV2> star_poly(T rad_min, T rad_max, int n) {
     // printf("A = [%f, %f]\n", a_min, a_max);
     pts.append(vec(rad_max * sin(a_max),rad_max * cos(a_max)));
   }
-  return contour_to_poly(pts);
+  return array_to_nested(pts);
 }
 
 struct Meshy {
@@ -792,7 +821,7 @@ Mesh cone_mesh(T len, Array<TV2> poly) {
     c = c + elt;
   }
   c = c / (double)n_boundary;
-  auto lid = invert_mesh(triangulate(contour_to_poly(bot)));
+  auto lid = invert_mesh(triangulate(array_to_nested(bot)));
 
   vh = lid.points;
   vh.append(vec(c.x, c.y, zmax));
@@ -810,7 +839,7 @@ Mesh cone_mesh(T len, Array<TV2> poly) {
 
 Mesh cone_mesh(T len, Nested<TV2> contours) {
   ensure(contours.size() == 1, "CONE ONLY WORKS ON SINGLE CONTOUR POLYGONS");
-  return cone_mesh(len, poly_to_contour(contours));
+  return cone_mesh(len, nested_elt(contours, 0));
 }
 
 Mesh mesh_between_poly(Array<TV3> bot, Array<TV3> top) {
@@ -824,11 +853,11 @@ Mesh mesh_between_poly(Array<TV3> bot, Array<TV3> top) {
   //   printf("  %f,%f,%f\n", e.x, e.y, e.z);
   int n_boundary = bot.size();
   // printf("N_BOUNDARY = %d\n", n_boundary);
-  auto top_mesh = triangulate(contour_to_poly(top));
+  auto top_mesh = triangulate(array_to_nested(top));
   int n_mesh = top_mesh.points.size();
   // printf("N_MESH = %d\n", n_mesh);
 
-  auto bot_mesh = triangulate(contour_to_poly(bot));
+  auto bot_mesh = triangulate(array_to_nested(bot));
 
   auto lids = concat_meshes(top_mesh, invert_mesh(bot_mesh));
 
@@ -865,13 +894,13 @@ Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly) {
 Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
   if (contours.size() == 1) {
     if (true || contours.size() == 1)
-      return taper_mesh(len, r0, r1, poly_to_contour(contours, 0));
+      return taper_mesh(len, r0, r1, nested_elt(contours, 0));
     else
-      return taper_mesh(len, r0, r1, poly_to_contour(contours, 1));
+      return taper_mesh(len, r0, r1, nested_elt(contours, 1));
   } else {
     auto res = none_mesh();
     for (int i = 0; i < contours.size(); i++) {
-      auto contour = poly_to_contour(contours, i);
+      auto contour = nested_elt(contours, i);
       if (!is_clockwise(contour)) {
         // printf("OUTER %d\n", i);
         auto mesh = taper_mesh(len, r0, r1, contour);
@@ -880,7 +909,7 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
       }
     }
     for (int i = 0; i < contours.size(); i++) {
-      auto contour = poly_to_contour(contours, i);
+      auto contour = nested_elt(contours, i);
       if (is_clockwise(contour)) {
         // printf("INNER %d\n", i);  
         auto mesh = mul(scale_matrix(vec(1.0,1.0,2.0)), taper_mesh(len, r0, r1, contour));
@@ -924,21 +953,21 @@ Mesh revolve(int n, Array<TV2> poly) {
 
 Mesh revolve(int n, Nested<TV2> contours) {
   if (contours.size() == 1)
-    return revolve(n, poly_to_contour(contours, 0));
+    return revolve(n, nested_elt(contours, 0));
   else {
     auto res = none_mesh();
     for (int i = 0; i < contours.size(); i++) {
-      auto contour = poly_to_contour(contours, i);
+      auto contour = nested_elt(contours, i);
       if (!is_clockwise(contour))
         res = union_add(res, revolve(n, contour));
     }
     for (int i = 0; i < contours.size(); i++) {
-      auto contour = poly_to_contour(contours, i);
+      auto contour = nested_elt(contours, i);
       if (is_clockwise(contour)) 
         res = union_add(res, revolve(n, contour));
     }
     return res;
-    // return revolve(n, poly_to_contour(contours));
+    // return revolve(n, nested_elt(contours));
   }
 }
 
@@ -957,7 +986,7 @@ Nested<TV2> fat_square_edge(int n, T rad, TV2 from, TV2 to) {
     points.append(vec(v0.x, v1.y));
     points.append(v1);
     points.append(vec(v1.x, v0.y));
-    return contour_to_poly(points);
+    return array_to_nested(points);
   }
 }
 
