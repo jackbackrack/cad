@@ -4,8 +4,10 @@
 #include <geode/mesh/io.h>
 #include <geode/vector/Matrix3x3.h>
 #include <geode/vector/Matrix4x4.h>
+#include <geode/vector/Matrix4x4.h>
 #include <geode/vector/Rotation.h>
 #include <geode/geometry/platonic.h>
+#include <geode/geometry/BoxVector.h>
 
 #include <cstdio>
 #include <math.h>
@@ -90,14 +92,14 @@ extern void pretty_print_matrix(Matrix<T,4> M);
 extern void pretty_print_polyline3(Nested<TV3> polyline);
 extern void pretty_print_polyline2(Nested<TV2> polyline);
 
-extern void print_mesh(Mesh soup);
-extern void print_contour(Array<TV2> contour);
-extern void print_line3(Array<TV3> contour);
-extern void print_line2(Array<TV2> contour);
-extern void print_poly(Nested<TV2> poly);
-extern void print_polyline3(Nested<TV3> polyline);
-extern void print_polyline2(Nested<TV2> polyline);
-extern void print_matrix(Matrix<T,4> M);
+extern std::string mesh_to_str(Mesh soup);
+extern std::string contour_to_str(Array<TV2> contour);
+extern std::string line3_to_str(Array<TV3> contour);
+extern std::string line2_to_str(Array<TV2> contour);
+extern std::string poly_to_str(Nested<TV2> poly);
+extern std::string polyline3_to_str(Nested<TV3> polyline);
+extern std::string polyline2_to_str(Nested<TV2> polyline);
+extern std::string matrix_to_str(Matrix<T,4> M);
 
 extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 

@@ -412,102 +412,119 @@ void pretty_print_polyline2(Nested<TV2> polyline) {
   }
 }
 
-void do_print_line2(std::string name, Array<TV2> line) {
+std::string do_line2_to_str(std::string name, Array<TV2> line) {
+  std::stringstream ss;
   int i = 0;
-  printf("%s(", name.c_str());
+  ss << name << "(";
   for (auto pt : line) {
-    if (i > 0) printf(", ");
-    printf("vec(%g,%g)", pt.x, pt.y);
+    if (i > 0) ss << ", ";
+    ss << "vec(" << pt.x << "," << pt.y << ")";
     i += 1;
   }
-  printf(")");
+  ss << ")";
+  return ss.str();
 }
 
-void do_print_line3(std::string name, Array<TV3> line) {
+std::string do_line3_to_str(std::string name, Array<TV3> line) {
+  std::stringstream ss;
   int i = 0;
-  printf("%s(", name.c_str());
+  ss << name << "(";
   for (auto pt : line) {
-    if (i > 0) printf(", ");
-    printf("vec(%g,%g,%g)", pt.x, pt.y, pt.z);
+    if (i > 0) ss << ", ";
+    ss << "vec(" << pt.x << "," << pt.y << "," << pt.z << ")";
     i += 1;
   }
-  printf(")");
+  ss << ")";
+  return ss.str();
 }
 
-void do_print_faces(std::string name, Array<const IV3> line) {
+std::string do_faces_to_str(std::string name, Array<const IV3> line) {
+  std::stringstream ss;
   int i = 0;
-  printf("%s(", name.c_str());
+  ss << name << "(";
   for (auto pt : line) {
-    if (i > 0) printf(", ");
-    printf("vec(%d,%d,%d)", pt.x, pt.y, pt.z);
+    if (i > 0) ss << ", ";
+    ss << "vec(" << pt.x << "," << pt.y << "," << pt.z << ")";
     i += 1;
   }
-  printf(")");
+  ss << ")";
+  return ss.str();
 }
 
-void print_mesh(Mesh mesh) {
-  printf("mesh(");
-  do_print_line3("points", mesh.points);
-  printf(", ");
-  do_print_faces("faces", mesh.soup->elements);
-  printf(")\n");
+std::string mesh_to_str(Mesh mesh) {
+  std::stringstream ss;
+  ss << "mesh(";
+  ss << do_line3_to_str("points", mesh.points);
+  ss << ", ";
+  ss << do_faces_to_str("faces", mesh.soup->elements);
+  ss << ")";
+  return ss.str();
 }
 
-void print_contour(Array<TV2> contour) {
-  do_print_line2("contour", contour);
+std::string contour_to_str(Array<TV2> contour) {
+  return do_line2_to_str("contour", contour);
 }
 
-void print_line3(Array<TV3> contour) {
-  do_print_line3("line3", contour);
+std::string line3_to_str(Array<TV3> contour) {
+  return do_line3_to_str("line3", contour);
 }
 
-void print_line2(Array<TV2> contour) {
-  do_print_line2("line2", contour);
+std::string line2_to_str(Array<TV2> contour) {
+  return do_line2_to_str("line2", contour);
 }
 
-void print_poly(Nested<TV2> poly) {
+std::string poly_to_str(Nested<TV2> poly) {
+  std::stringstream ss;
   int i = 0;
-  printf("poly(");
+  ss << "poly(";
   for (auto elt : poly) {
     Array<TV2> contour; for (auto e : elt) contour.append(e);
     Array<TV2> line; for (auto e : elt) line.append(e);
-    if (i > 0) printf(", ");
-    print_contour(line);
+    if (i > 0) ss << ", ";
+    ss << contour_to_str(line);
     i += 1;
   }
-  printf(")\n");
+  ss << ")";
+  return ss.str();
 }
 
-void print_polyline3(Nested<TV3> polyline) {
+std::string polyline3_to_str(Nested<TV3> polyline) {
+  std::stringstream ss;
   int i = 0;
-  printf("polyline3(");
+  ss << "polyline3(";
   for (auto elt : polyline) {
     Array<TV3> line; for (auto e : elt) line.append(e);
-    if (i > 0) printf(", ");
-    print_line3(line);
+    if (i > 0) ss << ", ";
+    ss << line3_to_str(line);
     i += 1;
   }
-  printf(")\n");
+  ss << ")";
+  return ss.str();
 }
 
-void print_polyline2(Nested<TV2> polyline) {
+std::string polyline2_to_str(Nested<TV2> polyline) {
+  std::stringstream ss;
   int i = 0;
-  printf("polyline2(");
+  ss << "polyline2(";
   for (auto elt : polyline) {
     Array<TV2> line; for (auto e : elt) line.append(e);
-    if (i > 0) printf(", ");
-    print_line2(line);
+    if (i > 0) ss << ", ";
+    ss << line2_to_str(line);
     i += 1;
   }
-  printf(")\n");
+  ss << ")";
+  return ss.str();
 }
 
-void print_matrix(Matrix<T,4> M) {
-  printf("mat(%g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g, %g)\n",
-         M.x[0][0],M.x[1][0],M.x[2][0],M.x[3][0],
-         M.x[0][1],M.x[1][1],M.x[2][1],M.x[3][1],
-         M.x[0][2],M.x[1][2],M.x[2][2],M.x[3][2],
-         M.x[0][3],M.x[1][3],M.x[2][3],M.x[3][3]);
+std::string matrix_to_str(Matrix<T,4> M) {
+  std::stringstream ss;
+  ss << "mat(";
+  ss << M.x[0][0] << "," << M.x[1][0] << "," << M.x[2][0] << "," << M.x[3][0] << ",";
+  ss << M.x[0][1] << "," << M.x[1][1] << "," << M.x[2][1] << "," << M.x[3][1] << ",";
+  ss << M.x[0][2] << "," << M.x[1][2] << "," << M.x[2][2] << "," << M.x[3][2] << ",";
+  ss << M.x[0][3] << "," << M.x[1][3] << "," << M.x[2][3] << "," << M.x[3][3] << ")";
+  ss << ")";
+  return ss.str();
 }
 
 Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify) {
@@ -858,7 +875,7 @@ Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours) {
       if (!is_clockwise(contour)) {
         // printf("OUTER %d\n", i);
         auto mesh = taper_mesh(len, r0, r1, contour);
-        // pretty_print_mesh(mesh);
+        // pretty_mesh(mesh);
         res = union_add(res, mesh);
       }
     }

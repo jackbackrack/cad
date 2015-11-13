@@ -316,12 +316,12 @@ Geom* parse_factor(Tokenizer& s) {
             g = g_pretty_print(args[0]);
           } else if (tok1.sym == "square") {
             if (args.size() == 2)
-              g = g_square(args[0], args[1]);
+              g = g_square_lo_hi(args[0], args[1]);
             else
               g = g_square(args[0]);
           } else if (tok1.sym == "cube") {
             if (args.size() == 2)
-              g = g_cube(args[0], args[1]);
+              g = g_cube_lo_hi(args[0], args[1]);
             else
               g = g_cube(args[0]);
           } else if (tok1.sym == "reflect_x") {
