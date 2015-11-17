@@ -1,5 +1,6 @@
 #include "cad.h"
 #include "hull.h"
+#include "iso-surface.h"
 #include "geom.h"
 
 #include <cstdio>
@@ -325,6 +326,13 @@ Geom* g_print(Geom* g) {
   printf("%s\n", g_to_str_val(g).c_str());
   return g;
 }
+Geom* g_check(Geom* g) { 
+  if (g->k == mesh_kind) 
+    return g_mesh(check_mesh(g_mesh_val(g)));
+  else {
+    error("BAD CHECK"); return NULL;
+  }
+}
 
 Geom* g_pretty_print(Geom* g) { 
   if (g->k == num_kind)
@@ -586,7 +594,8 @@ Geom* g_not(Geom* a) {
 }
 Geom* g_offset(Geom* a, Geom* g) {
   if (g->k == mesh_kind)
-    return new MeshGeom(offset_mesh(1, g_num_val(a), g_mesh_val(g)));
+    // return new MeshGeom(offset_mesh(1, g_num_val(a), g_mesh_val(g)));
+    return new MeshGeom(offset_mesh(g_num_val(a), g_mesh_val(g)));
   else if (g->k == nested_v2d_kind)
     return g_nested_v2d(offset_polyline(16, g_num_val(a), g_poly_val(g)));
   else if (is_poly(g))
@@ -595,6 +604,7 @@ Geom* g_offset(Geom* a, Geom* g) {
     error("Bad args for offset"); return NULL;
   }
 }
+Geom* g_hollow(Geom* a, Geom* m) { return g_difference(m, g_offset(g_num(-g_num_val(a)), m)); }
 Geom* g_simplify(Geom* g) { return new MeshGeom(real_simplify_mesh(g_mesh_val(g))); }
 Geom* g_slice(Geom* a, Geom* g) { return new PolyGeom(slice(g_num_val(a), g_mesh_val(g))); }
 Geom* g_extrude(Geom* a, Geom* p) { return new MeshGeom(extrude(g_num_val(a), g_poly_val(p))); }
@@ -604,13 +614,13 @@ Geom* g_thicken(Geom* a, Geom* l) {
   else //  (is_nested_v3d(l))
     return new MeshGeom(thicken(1, g_num_val(a), g_nested_v3d_val(l)));
 }
+
 Geom* g_sphere(Geom* a) { return new MeshGeom(sphere_mesh(1, vec(0.0, 0.0, 0.0), g_num_val(a))); }
 Geom* g_cube(Geom* a) { auto r = g_num_val(a); return new MeshGeom(cube_mesh(vec(-r, -r, -r), vec(r, r, r))); }
 Geom* g_cube_lo_hi(Geom* lo, Geom* hi) { return new MeshGeom(cube_mesh(g_v3d_val(lo), g_v3d_val(hi))); }
 Geom* g_cone(Geom* a, Geom* p) { return new MeshGeom(cone_mesh(g_num_val(a), g_poly_val(p))); }
 Geom* g_revolve(Geom* p) { return new MeshGeom(revolve(16, g_poly_val(p))); }
 Geom* g_hull(Geom* m) { return new MeshGeom(quick_hull(g_mesh_val(m))); }
-// Geom* g_hollow(Geom* a, Geom* m) { return new MeshGeom(hollow(g_num_val(a), g_mesh(m))); }
 // Geom* g_shear_x_z(Geom* z0, Geom* z1, Geom* dx0, Geom* dx1, Geom* m) {
 //   return new MeshGeom(shear_x_z(g_num_val(z0), g_num_val(z1), g_num_val(dx0), g_num_val(dx1), g_mesh(m))); }
 Geom* g_taper(Geom* l, Geom* r0, Geom* r1, Geom* p) {

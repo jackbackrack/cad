@@ -30,6 +30,9 @@ cad.o: cad.h cad.cpp
 hull.o: cad.h hull.h hull.cpp
 	clang++ -c $(FLAGS) $(INCS) hull.cpp
 
+iso-surface.o: cad.h iso-surface.h iso-surface.cpp
+	clang++ -c $(FLAGS) $(INCS) iso-surface.cpp
+
 geom.o: cad.h geom.h geom.cpp
 	clang++ -c $(FLAGS) $(INCS) geom.cpp
 
@@ -39,5 +42,5 @@ read-eval.o: cad.h read-eval.h read-eval.cpp
 app.o: cad.h app.h read-eval.h app.cpp
 	clang++ -c $(FLAGS) $(INCS) app.cpp
 
-cad: cad.o hull.o geom.o read-eval.o app.o 
-	clang++ -march=native -g -fPIC -o cad cad.o hull.o geom.o read-eval.o app.o $(LIBS)
+cad: cad.o hull.o iso-surface.o geom.o read-eval.o app.o 
+	clang++ -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o geom.o read-eval.o app.o $(LIBS)

@@ -278,6 +278,8 @@ Geom* parse_factor(Tokenizer& s) {
             return g_thicken(args[0], args[1]);
           } else if (tok1.sym == "offset") {
             return g_offset(args[0], args[1]);
+          } else if (tok1.sym == "hollow") {
+            g = g_hollow(args[0], args[1]);
           } else if (tok1.sym == "yrot") {
             g = g_yrot(args[0], args[1]);
           } else if (tok1.sym == "zrot") {
@@ -314,6 +316,8 @@ Geom* parse_factor(Tokenizer& s) {
             g = g_circle(args[0]);
           } else if (tok1.sym == "print") {
             g = g_print(args[0]);
+          } else if (tok1.sym == "check") {
+            g = g_check(args[0]);
           } else if (tok1.sym == "pprint") {
             g = g_pretty_print(args[0]);
           } else if (tok1.sym == "square") {
@@ -351,8 +355,6 @@ Geom* parse_factor(Tokenizer& s) {
             /*
           } else if (tok1.sym == "rect") {
             g = g_rect(args[0], args[1], args[2], args[3]);
-          } else if (tok1.sym == "hollow") {
-            g = g_hollow(args[0], args[1]);
           } else if (tok1.sym == "shear") {
             g = g_shear_x_z(args[0], args[1], args[2], args[3], args[4]);
           } else if (tok1.sym == "transform") {
@@ -613,7 +615,7 @@ int compile_geom (std::string expr, bool is_show_lines, bool is_show_normals) {
   // auto shape = extrude(-8.0, 8.0, star);
   // auto shape = g_mesh(parse_geom("sphere(5.0)"));
   init_cad();
-  printf("EXPR = %s\n", expr.c_str());
+  // printf("EXPR = %s\n", expr.c_str());
   Geom* shape = parse_geom(expr);
   if (is_nested_v2d(shape))
     return display_polyline2(g_nested_v2d_val(shape));

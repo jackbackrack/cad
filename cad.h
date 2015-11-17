@@ -34,6 +34,7 @@ typedef Vector<T,2> TV2;
 typedef Vector<T,3> TV3;
 typedef Vector<int,2> IV2;
 typedef Vector<int,3> IV3;
+typedef Vector<int,4> IV4;
 // typedef Tuple<Ref<const TriangleSoup>, Array<TV3>> Mesh;
 struct Mesh {
 public:
@@ -177,6 +178,8 @@ extern Mesh taper_mesh(T len, T r0, T r1, Array<TV2> poly);
 
 extern Mesh taper_mesh(T len, T r0, T r1, Nested<TV2> contours);
 
+extern Mesh check_mesh(Mesh mesh);
+
 extern Mesh extrude(T len, Nested<TV2> poly);
 
 extern Mesh revolve(int n, Array<TV2> poly);
@@ -201,7 +204,7 @@ extern Mesh thicken(int n, T rad, Nested<TV3> polyline);
 
 extern Nested<TV2> thicken(int n, T rad, Nested<TV2> line);
 
-extern Mesh offset_mesh(int n, T rad, Mesh mesh);
+// extern Mesh offset_mesh(int n, T rad, Mesh mesh);
 
 extern Nested<TV2> stroke_char (char letter);
 

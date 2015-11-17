@@ -361,7 +361,7 @@ void pretty_print_v3i(IV3 pt) {
 void pretty_print_mesh(Mesh mesh) {
   int i = 0;
   for (auto pt : mesh.points) {
-    printf("PT[%2d] %g,%g,%g\n", i, pt.x, pt.y, pt.z);
+    printf("PT[%2d] %f,%f,%f\n", i, pt.x, pt.y, pt.z);
     i += 1;
   }
   for (auto tri : mesh.soup->elements)
@@ -1095,6 +1095,15 @@ Mesh thicken(int n, T rad, Nested<TV3> polyline) {
   return res;
 }
 
+Mesh check_mesh(Mesh mesh) {
+  auto topo = new_<TriangleTopology>(mesh.soup->elements);
+  printf("VERTICES %d EDGES %d BOUNDARD-EDGES %d FACES %d IS-MANIFOLD %d HAS-BOUNDARY %d\n",
+         topo->n_vertices(), topo->n_edges(), topo->n_boundary_edges(), topo->n_faces(),
+         topo->is_manifold(), topo->has_boundary());
+  topo->dump_internals();
+  return mesh;
+}
+
 /*
 Mesh offset_mesh(int n, T rad, Mesh mesh) {
   Array<TV3> pos(mesh.y);
@@ -1107,7 +1116,6 @@ Mesh offset_mesh(int n, T rad, Mesh mesh) {
   return tuple(const_mesh(new_soup), new_points);
   return mesh;
 }
-*/
 
 Mesh offset_mesh(int n, T rad, Mesh mesh) {
   // Mesh res = none_mesh();
@@ -1140,6 +1148,7 @@ Mesh offset_mesh(int n, T rad, Mesh mesh) {
   }
   return res;
 }
+*/
 
 static std::string letter_codes[256];
 static Nested<TV2> letter_outlines[256];

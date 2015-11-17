@@ -112,7 +112,7 @@ static void sim_parse_args (int argc, const char *argv[]) {
 }
 
 void sim_t::open ( void ) {
-  printf("STR = %s\n", expr.c_str());
+  // printf("STR = %s\n", expr.c_str());
 }
 
 void sim_t::render ( bool is_picking ) {

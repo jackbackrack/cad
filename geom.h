@@ -230,6 +230,7 @@ extern "C" char* g_c_str(Geom* g);
 extern "C" Geom* g_to_str(Geom* g);
 extern std::string g_to_str_val(Geom* g);
 extern "C" Geom* g_print(Geom* g);
+extern "C" Geom* g_check(Geom* g);
 extern "C" Geom* g_pretty_print(Geom* g);
 extern "C" Geom* g_pi(void);
 extern "C" Geom* g_none2(void);
@@ -269,6 +270,7 @@ extern "C" Geom* g_union(Geom* a, Geom* b);
 extern "C" Geom* g_difference(Geom* a, Geom* b);
 extern "C" Geom* g_not(Geom* a);
 extern "C" Geom* g_offset(Geom* a, Geom* g);
+extern "C" Geom* g_hollow(Geom* a, Geom* m);
 extern "C" Geom* g_simplify(Geom* g);
 extern "C" Geom* g_slice(Geom* a, Geom* g);
 extern "C" Geom* g_extrude(Geom* a, Geom* p);
@@ -279,7 +281,6 @@ extern "C" Geom* g_cube_lo_hi(Geom* lo, Geom* hi);
 extern "C" Geom* g_cone(Geom* a, Geom* p);
 extern "C" Geom* g_revolve(Geom* p);
 extern "C" Geom* g_hull(Geom* m);
-// extern "C" Geom* g_hollow(Geom* a, Geom* m);
 extern "C" Geom* g_taper(Geom* l, Geom* r0, Geom* r1, Geom* p);
 
 #endif
