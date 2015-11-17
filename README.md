@@ -92,11 +92,13 @@
 * 3D -> 3D
 
 ```cad "hull(revolve(xmov(4, circle(4))) | extrude(20, square(2)))"```
+```cad "offset(3, cube(1))"
+```cad "hollow(1, cube(4))"
 
 # TODO
 
-* 3D offsetting
-* 3D mesh shadow instead of slice
-* 3D->3D revolve/extrude
+* auto specification of resolution for spheres, offset etc
 * SVG reading/writing
 * colors
+* 3D mesh shadow instead of slice
+* 3D->3D revolve/extrude
