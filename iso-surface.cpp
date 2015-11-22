@@ -482,6 +482,6 @@ Mesh offset_mesh(T off, Mesh mesh) {
   // printf("BOX [%g,%g,%g] [%g,%g,%g]\n", box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z);
   auto dims = box.max - box.min;
   // TODO: AUTO SET CELL_SIZE
-  auto cell_size = min(dims.x, min(dims.y, dims.z)) / 20.0;
+  auto cell_size = min(dims.x, min(dims.y, dims.z)) / 40.0;
   return surface.IsoApproximate(box.min, box.max, cell_size, mesh, off);
 }

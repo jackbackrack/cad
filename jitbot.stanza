@@ -4,27 +4,23 @@ defpackage jitbot :
 
 public definterface Geom
 defmulti ptr (g:Geom) -> ?
-defmethod print (o:OutputStream, g:Geom) :
-  print-all(o ["GEOM<?>"])
 
 definterface Args <: Geom
 defmulti add (args:Args, arg:Geom)
 defmulti len (args:Args) -> Int
 defn Args () :
-  val ptr = ($do-prim ls g-args-fab)
+  val p = ($do-prim ls g-args-fab)
   new Args :
-    defmethod ptr (this) : ptr
+    defmethod ptr (this) : p
     defmethod add (this, a:Geom) :
-      println-all(["-> ARGS ADDING " a])
       val parg = ptr(a)
-      ($do-prim ls g-args-add ptr parg)
+      ($do-prim ls g-args-add p parg)
       false
-    defmethod len (this) : ($do-prim ls g-args-len ptr)
+    defmethod len (this) : ($do-prim ls g-args-len p)
 
 defn array-args (s:Streamable<Geom>) -> Args :
   val args = Args()
   for e in s do :
-    println-all(["ARGS ADDING " e])
     add(args, e)
   args
 
@@ -35,11 +31,8 @@ public defn Num (p:?) :
     defmethod ptr (this) : p
     defmethod value (this) : ($do-prim ls g-num-value p)
 public defn num (f:Float) : Num(($do-prim ls g-num-fab f))
-public defn pprint (a:Num) -> Num :
-  val p = ptr(a)
-  Num(($do-prim ls g-pretty-print p))
 defmethod print (o:OutputStream, g:Num) :
-  print-all(o ["Num<?>"])
+  print-all(o ["Num(" value(g) ")"])
 
 public defclass Str <: Geom
 public defmulti value (n:Str) -> String
@@ -48,6 +41,8 @@ public defn Str (ptr:?) :
     defmethod ptr (this) : ptr
     defmethod value (this) : ($do-prim ls g-str-value ptr)
 public defn str (s:String) : Str(($do-prim ls g-str-fab s))
+defmethod print (o:OutputStream, g:Str) :
+  print-all(o ["Str(" value(g) ")"])
 
 public defclass V2d <: Geom
 public defmulti x (v:V2d) -> Float
@@ -61,11 +56,8 @@ public defn V2d (ptr:?) :
     defmethod y (this) : ($do-prim ls g-v2d-y ptr)
 public defn v2d (x:Float, y:Float) : V2d(($do-prim ls g-v2d-fab x y))
 public defn vec (x:Float, y:Float) : v2d(x, y)
-public defn pprint (a:V2d) -> V2d :
-  val p = ptr(a)
-  V2d(($do-prim ls g-pretty-print p))
 defmethod print (o:OutputStream, g:V2d) :
-  print-all(o ["V2d<?>"])
+  print-all(o ["V2d(" x(g) "," y(g) ")"])
 
 public defclass V3d <: Geom
 public defmulti x (v:V3d) -> Float
@@ -81,9 +73,8 @@ public defn V3d (ptr:?) :
     defmethod z (this) : ($do-prim ls g-v3d-z ptr)
 public defn V3d (x:Float, y:Float, z:Float) : V3d(($do-prim ls g-v3d-fab x y z))
 public defn vec (x:Float, y:Float, z:Float) : V3d(x, y, z)
-public defn pprint (a:V3d) -> V3d :
-  val p = ptr(a)
-  V3d(($do-prim ls g-pretty-print p))
+defmethod print (o:OutputStream, g:V3d) :
+  print-all(o ["V3d(" x(g) "," y(g) "," z(g) ")"])
 
 public defclass V3i <: Geom
 public defmulti x (v:V3i) -> Int
@@ -99,51 +90,8 @@ public defn V3i (ptr:?) :
     defmethod z (this) : ($do-prim ls g-v3i-z ptr)
 public defn V3i (x:Int, y:Int, z:Int) : V3i(($do-prim ls g-v3i-fab x y z))
 public defn vec (x:Int, y:Int, z:Int) : V3i(x, y, z)
-
-public defclass ArrayV2d <: Geom
-public defmulti elt (v:ArrayV2d, i:Int) -> V2d
-public defmulti len (v:ArrayV2d) -> Int
-public defn ArrayV2d (ptr:?) :
-  new ArrayV2d :
-    defmethod ptr (this) : ptr
-    defmethod elt (this, i:Int) : V2d(($do-prim ls g-array-v2d-elt ptr i))
-    defmethod len (this) : ($do-prim ls g-array-v2d-len ptr)
-public defn arrayV2d (points:Streamable<V2d>) :
-  val args = array-args(points)
-  ArrayV2d(($do-prim ls g-array-v2d-fab args))
-public defn pprint (a:ArrayV2d) -> ArrayV2d :
-  val pa = ptr(a)
-  ArrayV2d(($do-prim ls g-pretty-print pa))
-
-public defclass ArrayV3d <: Geom
-public defmulti elt (v:ArrayV3d, i:Int) -> V3d
-public defmulti len (v:ArrayV3d) -> Int
-public defn ArrayV3d (ptr:?) :
-  new ArrayV3d :
-    defmethod ptr (this) : ptr
-    defmethod elt (this, i:Int) : V3d(($do-prim ls g-array-v3d-elt ptr i))
-    defmethod len (this) : ($do-prim ls g-array-v3d-len ptr)
-public defn arrayV3d (points:Streamable<V3d>) :
-  val args = array-args(points)
-  ArrayV3d(($do-prim ls g-array-v3d-fab args))
-public defn pprint (a:ArrayV3d) -> ArrayV3d :
-  val pa = ptr(a)
-  ArrayV3d(($do-prim ls g-pretty-print pa))
-
-public defclass ArrayV3i <: Geom
-public defmulti elt (v:ArrayV3i, i:Int) -> V3i
-public defmulti len (v:ArrayV3i) -> Int
-public defn ArrayV3i (ptr:?) :
-  new ArrayV3i :
-    defmethod ptr (this) : ptr
-    defmethod elt (this, i:Int) : V3i(($do-prim ls g-array-v3i-elt ptr i))
-    defmethod len (this) : ($do-prim ls g-array-v3i-len ptr)
-public defn arrayV3i (points:Streamable<V3i>) :
-  val args = array-args(points)
-  ArrayV3i(($do-prim ls g-array-v3i-fab args))
-public defn pprint (a:ArrayV3i) -> ArrayV3i :
-  val pa = ptr(a)
-  ArrayV3i(($do-prim ls g-pretty-print pa))
+defmethod print (o:OutputStream, g:V3i) :
+  print-all(o ["V3i(" x(g) "," y(g) "," z(g) ")"])
 
 public defclass BBox2 <: Geom
 public defmulti min (bb:BBox2) -> V2d
@@ -153,6 +101,11 @@ public defn BBox2 (ptr:?) :
     defmethod ptr (this) : ptr
     defmethod min (this) : V2d(($do-prim ls g-bbox2-min ptr))
     defmethod max (this) : V2d(($do-prim ls g-bbox2-max ptr))
+public defn pprint (a:BBox2) -> BBox2 :
+  val p = ptr(a)
+  BBox2(($do-prim ls g-pretty-print p))
+defmethod print (o:OutputStream, g:BBox2) :
+  print-all(o ["BBox2(" min(g) "," max(g) ")"])
 
 public defclass BBox3 <: Geom
 public defmulti min (bb:BBox3) -> V3d
@@ -162,6 +115,11 @@ public defn BBox3 (ptr:?) :
     defmethod ptr (this) : ptr
     defmethod min (this) : V3d(($do-prim ls g-bbox3-min ptr))
     defmethod max (this) : V3d(($do-prim ls g-bbox3-max ptr))
+public defn pprint (a:BBox3) -> BBox3 :
+  val p = ptr(a)
+  BBox3(($do-prim ls g-pretty-print p))
+defmethod print (o:OutputStream, g:BBox3) :
+  print-all(o ["BBox3(" min(g) "," max(g) ")"])
 
 public defclass Mat <: Geom
 public defmulti elt (v:Mat, i:Int, j:Int) -> Float
@@ -175,37 +133,122 @@ public defn mat (i00:Float, i01:Float, i02:Float, i03:Float,
                  i30:Float, i31:Float, i32:Float, i33:Float) :
   Mat(($do-prim ls g-mat-fab
          i00 i01 i02 i03 i10 i11 i12 i13 i20 i21 i22 i23 i30 i31 i32 i33))
+defmethod print (o:OutputStream, g:Mat) :
+  print-all(o ["Mat(" elt(g,0,0) "," elt(g,0,1) "," elt(g,0,2) "," elt(g,0,3) ","
+                      elt(g,1,0) "," elt(g,1,1) "," elt(g,1,2) "," elt(g,1,3) ","
+                      elt(g,2,0) "," elt(g,2,1) "," elt(g,2,2) "," elt(g,2,3) ","
+                      elt(g,3,0) "," elt(g,3,1) "," elt(g,3,2) "," elt(g,3,3) ")"])
 
 public definterface Geom2 <: Geom
 public definterface Geom3 <: Geom2
 
+defn print-elts (o:OutputStream, g:Geom, name:String, len, elt) :
+  print-all(o [name "(["])
+  var first? = true
+  for i in 0 to len(g) do :
+    if first?: first? = false else: print(o, ",")
+    print(o, elt(g, i))
+  print-all(o ["])"])
+  
+public defclass ArrayV2d <: Geom
+public defmulti elt (v:ArrayV2d, i:Int) -> V2d
+public defmulti len (v:ArrayV2d) -> Int
+public defn ArrayV2d (ptr:?) :
+  new ArrayV2d :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : V2d(($do-prim ls g-array-v2d-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-array-v2d-len ptr)
+public defn arrayV2d (points:Streamable<V2d>) :
+  val args = ptr(array-args(points))
+  ArrayV2d(($do-prim ls g-array-v2d-fab args))
+public defn pprint (a:ArrayV2d) -> ArrayV2d :
+  val pa = ptr(a)
+  ArrayV2d(($do-prim ls g-pretty-print pa))
+defmethod print (o:OutputStream, g:ArrayV2d) :
+  print-elts(o, g, "ArrayV2d", len, elt)
+
+public defclass ArrayV3d <: Geom
+public defmulti elt (v:ArrayV3d, i:Int) -> V3d
+public defmulti len (v:ArrayV3d) -> Int
+public defn ArrayV3d (ptr:?) :
+  new ArrayV3d :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : V3d(($do-prim ls g-array-v3d-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-array-v3d-len ptr)
+public defn arrayV3d (points:Streamable<V3d>) :
+  val args = ptr(array-args(points))
+  ArrayV3d(($do-prim ls g-array-v3d-fab args))
+public defn pprint (a:ArrayV3d) -> ArrayV3d :
+  val pa = ptr(a)
+  ArrayV3d(($do-prim ls g-pretty-print pa))
+defmethod print (o:OutputStream, g:ArrayV3d) :
+  print-elts(o, g, "ArrayV3d", len, elt)
+
+public defclass ArrayV3i <: Geom
+public defmulti elt (v:ArrayV3i, i:Int) -> V3i
+public defmulti len (v:ArrayV3i) -> Int
+public defn ArrayV3i (ptr:?) :
+  new ArrayV3i :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : V3i(($do-prim ls g-array-v3i-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-array-v3i-len ptr)
+public defn arrayV3i (points:Streamable<V3i>) :
+  val args = ptr(array-args(points))
+  ArrayV3i(($do-prim ls g-array-v3i-fab args))
+public defn pprint (a:ArrayV3i) -> ArrayV3i :
+  val pa = ptr(a)
+  ArrayV3i(($do-prim ls g-pretty-print pa))
+defmethod print (o:OutputStream, g:ArrayV3i) :
+  print-elts(o, g, "ArrayV3i", len, elt)
+
 public definterface Polygon <: Geom2 
+public defmulti elt (v:Polygon, i:Int) -> ArrayV2d
+public defmulti len (v:Polygon) -> Int
 public defn Polygon (ptr:?) :
   new Polygon :
+    defmethod elt (this, i:Int) : ArrayV2d(($do-prim ls g-poly-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-poly-len ptr)
     defmethod ptr (this) : ptr
 public defn polygon (contours:Streamable<Streamable<V2d>>) :
-  val args = array-args(stream(arrayV2d, contours))
+  val args = ptr(array-args(stream(arrayV2d, contours)))
   Polygon(($do-prim ls g-poly-fab args))
 public defn polygon (contour:Streamable<V2d>) : polygon([contour])
+defmethod print (o:OutputStream, g:Polygon) :
+  print-elts(o, g, "Polygon", len, elt)
 
 public definterface Polyline <: Geom3 
+public defmulti elt (v:Polyline, i:Int) -> ArrayV3d
+public defmulti len (v:Polyline) -> Int
 public defn Polyline (ptr:?) :
   new Polyline :
     defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : ArrayV3d(($do-prim ls g-nested-v3d-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-nested-v3d-len ptr)
 public defn polyline (lines:Streamable<Streamable<V3d>>) : 
-  val args = array-args(stream(arrayV3d, lines))
+  val args = ptr(array-args(stream(arrayV3d, lines)))
   Polyline(($do-prim ls g-nested-v3d-fab args))
 public defn polyline (line:Streamable<V3d>) : polyline([line])
+defmethod print (o:OutputStream, g:Polyline) :
+  print-elts(o, g, "Polyline", len, elt)
 
 public definterface Mesh <: Geom3 
+public defmulti points (v:Mesh) -> ArrayV3d
+public defmulti faces (v:Mesh) -> ArrayV3i
 public defn Mesh (ptr:?) :
   new Mesh :
     defmethod ptr (this) : ptr
+    defmethod points (this) : ArrayV3d(($do-prim ls g-mesh-points ptr))
+    defmethod faces (this) : ArrayV3i(($do-prim ls g-mesh-faces ptr))
 public defn mesh (points:Streamable<V3d>, faces:Streamable<V3i>) :
   val pp = ptr(arrayV3d(points))
   val pf = ptr(arrayV3i(faces))
   Mesh(($do-prim ls g-mesh-fab pp pf))
+defmethod print (o:OutputStream, g:Mesh) :
+  print-all(o ["Mesh(" points(g) "," faces(g) ")"])
 
+public defn rprint (a:Polygon) -> Polygon :
+  val p = ptr(a)
+  Polygon(($do-prim ls g-print p))
 public defn pprint (a:Polygon) -> Polygon :
   val p = ptr(a)
   Polygon(($do-prim ls g-pretty-print p))
@@ -280,6 +323,9 @@ public defn offset (a:Num, b:Polygon) -> Polygon :
   val pb = ptr(b)
   Polygon(($do-prim ls g-offset pa pb))
 
+public defn rprint (a:Polyline) -> Polyline :
+  val pa = ptr(a)
+  Polyline(($do-prim ls g-print pa))
 public defn pprint (a:Polyline) -> Polyline :
   val pa = ptr(a)
   Polyline(($do-prim ls g-pretty-print pa))
@@ -363,6 +409,9 @@ public defn offset (a:Num, b:Polyline) -> Polyline :
   val pb = ptr(b)
   Polyline(($do-prim ls g-offset pa pb))
 
+public defn rprint (a:Mesh) -> Mesh :
+  val pa = ptr(a)
+  Mesh(($do-prim ls g-print pa))
 public defn pprint (a:Mesh) -> Mesh :
   val pa = ptr(a)
   Mesh(($do-prim ls g-pretty-print pa))
@@ -463,11 +512,11 @@ public defn sphere (r:Num) -> Mesh :
 public defn cube (r:Num) -> Mesh :
   val pr = ptr(r)
   Mesh(($do-prim ls g-cube pr))
-public defn load (s:String) -> Mesh :
-  val ps = ($do-prim ls g-str-fab s)
+public defn load (s:Str) -> Mesh :
+  val ps = ptr(s)
   Mesh(($do-prim ls g-load ps))
-public defn save (s:String, m:Mesh) -> Mesh :
-  val ps = ($do-prim ls g-str-fab s)
+public defn save (s:Str, m:Mesh) -> Mesh :
+  val ps = ptr(s)
   val pm = ptr(m)
   Mesh(($do-prim ls g-save ps pm))
 

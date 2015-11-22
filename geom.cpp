@@ -18,7 +18,6 @@ extern Mesh quick_hull(Mesh mesh);
 Geom* g_args_fab(void) { return new ArgsGeom(); }
 Geom* g_args_add(Geom* g, Geom* e) {
   ((ArgsGeom*)g)->val.push_back(e);
-  printf("ADDING ARGS %lx ARG %lx LEN %d\n", g, e, g_args_len(g)); g_pretty_print(e); fflush(stdout);
   return g;
 }
 int g_args_len(Geom* g) { return g_args_val(g).size(); }
@@ -38,7 +37,6 @@ inline int float_as_int(float xf) {
 }
 
 Geom* g_num_fab(int a) {
-  printf("FAB NUM %f\n", int_as_float(a));
   return g_num((T)int_as_float(a));
 }
 double g_num_val(Geom* g) {
@@ -70,7 +68,6 @@ char* g_string_c_str(Geom* g) {
 
 Geom* g_v2d_fab(int x, int y) {
   auto res = g_v2d(vec((T)int_as_float(x), (T)int_as_float(y)));
-  printf("FAB V2D %f %f -> %lx\n", int_as_float(x), int_as_float(y), res);
   return res;
 }
 TV2 g_v2d_val(Geom* g) {
@@ -131,12 +128,8 @@ Array<TV2> g_array_v2d_val(Geom* g) {
 
 Geom* g_array_v2d_fab(Geom* args) {
   Array<TV2> v;
-  printf("FABBING ARRAY_V2D %lx\n", args); 
-  for (auto arg : g_args_val(args)) {
-    printf("ADDING ARG %lx\n", arg); 
+  for (auto arg : g_args_val(args)) 
     v.append(g_v2d_val(arg));
-  }
-  printf("FABBING ARRAY_V2D LEN %d\n", v.size()); 
   return g_array_v2d(v);
 }
 Geom* g_array_v2d_elt(Geom* g, int idx) { return g_v2d(g_array_v2d_val(g)[idx]); }
@@ -250,7 +243,7 @@ Mesh g_mesh_val(Geom* g) {
   return ((MeshGeom*)g)->val;
 }
 
-Geom* g_mesh_fab(Geom* faces, Geom* vertices) {
+Geom* g_mesh_fab(Geom* vertices, Geom* faces) {
   return g_mesh(fab_mesh(g_array_v3i_val(faces), g_array_v3d_val(vertices)));
 }
 Geom* g_mesh_faces(Geom* g) {
