@@ -3,7 +3,7 @@
 
 #include <vector>
 #include <iostream>
-#include <geode/vector/vector3d.h>
+#include <geode/vector/Vector3d.h>
 #include "cad.h"
 
 using namespace geode;
