@@ -1,0 +1,32 @@
+#include("geom-lslib.lstanza")
+#include("jitbot.stanza")
+;; #link("cad.a")
+;; #link("-lgeode")
+;; #link("-framework GLUT -framework OpenGL")
+
+val pi = 3.1415
+
+defn star (n:Int, rmin:Float, rmax:Float) -> Polygon :
+  val points = generate<V2d> :
+    for i in 0 to 2 * n do :
+      val a = (2.0 * pi * to-float(i)) / (2.0 * to-float(n))
+      val r = if i % 2 == 0 : rmax else : rmin
+      yield(vec(r * cos(a), r * sin(a)))
+  polygon(points)
+ 
+println(num(1.0))
+println(vec(1.0, 2.0))
+println(arrayV2d([vec(-1.0,-1.0)]))
+;; pprint(arrayV2d([vec(-1.0,-1.0),vec(0.0,1.0),vec(1.0,-1.0)]))
+;; pprint(arrayV3d([vec(-1.0,-1.0,-1.0),vec(0.0,1.0,0.0),vec(1.0,-1.0,1.0)]))
+;; pprint(arrayV3i([vec(-1,-1,-1),vec(0,1,1),vec(1,-1,0)]))
+;; println(polygon([vec(-1.0,-1.0),vec(0.0,1.0),vec(1.0,-1.0)]))
+;; pprint(polygon([[vec(-1.0,-1.0),vec(0.0,1.0),vec(1.0,-1.0)]]))
+;; pprint(mesh([vec(-1.0,-1.0,-1.0), vec(-1.0,-1.0,1.0), vec(-1.0,1.0,-1.0), vec(-1.0,1.0,1.0), vec(1.0,-1.0,-1.0), vec(1.0,-1.0,1.0), vec(1.0,1.0,-1.0), vec(1.0,1.0,1.0)], [vec(0,1,2), vec(2,1,3), vec(1,0,5), vec(5,0,4), vec(3,1,7), vec(7,1,5), vec(0,2,4), vec(4,2,6), vec(2,3,6), vec(6,3,7), vec(5,6,7), vec(6,5,4)]))
+println(cube(num(4.0)))
+println(bbox(cube(num(4.0))))
+println(square(num(1.0)) | circle(num(1.5)))
+;; println(extrude(num(16.0),square(num(2.0)) - square(num(1.0))))
+println(extrude(num(10.0), star(7, 3.0, 5.0) - circle(num(2.0))))
+save(str("abc.stl"), extrude(num(10.0), star(7, 3.0, 5.0) - circle(num(2.0))))
+
