@@ -26,4 +26,4 @@ star.s: star.stanza jitbot.stanza geom-lslib.lstanza
 	../jitpcb/bin/sobc -i star.stanza -s star.s
 
 star: runtime.o main.o star.s cad.a
-	g++ -O3  runtime.o main.o cad.a $(LIBS) star.s -o star
+	g++ -O3  runtime.o main.o star.s $(LIBS) cad.a -o star
