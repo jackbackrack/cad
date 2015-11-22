@@ -41,6 +41,8 @@
 
 ```cad "poly([[-2,-2],[-1,0],[-2,2],[0,1],[2,2],[1,0],[2,-2],[0,-1]])"```
 
+```cad "hull(square(5) | circle(6))"```
+
 * 3D
 
 ```cad "sphere(2.6)"```
@@ -52,6 +54,12 @@
 ```cad "(xrot(15,cube(2)) | yrot(15,cube(2)) | zrot(15,cube(2)) | cube(2)) \ sphere(2.6)"```
 
 ```cad "((sphere(8) | extrude(20,circle(2))) \ sphere(7)) \ extrude(21,circle(1))"```
+
+```cad "hull(revolve(xmov(4, circle(4))) | extrude(20, square(2)))"```
+
+```cad "offset(3, cube(1))"```
+
+```cad "hollow(1, cube(4))"```
 
 * 1D -> 2D
 
@@ -89,11 +97,6 @@
 
 ```cad "slice(0,revolve(xmov(4,square(2) \ square(1))))"```
 
-* 3D -> 3D
-
-```cad "hull(revolve(xmov(4, circle(4))) | extrude(20, square(2)))"```
-```cad "offset(3, cube(1))"```
-```cad "hollow(1, cube(4))"```
 
 # TODO
 
