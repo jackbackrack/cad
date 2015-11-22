@@ -1,0 +1,233 @@
+externfn g_args_fab : () -> ptr<?>
+defn g-args-fab () -> ref<Ptr> : return ref<Ptr>(callc(g_args_fab))
+externfn g_args_add : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-args-add (g:ref<Ptr> a:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_args_add, g.value, a.value))
+externfn g_args_len : (ptr<?>) -> int
+defn g-args-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_args_len, g.value))
+externfn g_num_fab : (float) -> ptr<?>
+defn g-num-fab (n:ref<Float>) -> ref<Ptr> : return ref<Ptr>(callc(g_num_fab, n.value))
+externfn g_num_value : (ptr<?>) -> float
+defn g-num-value (n:ref<Ptr>) -> ref<Float> : return ref<Float>(callc(g_num_value, n.value))
+externfn g_string_fab : (ptr<byte>) -> ptr<?>
+defn g-str-fab (n:ref<String>) -> ref<Ptr> : return ref<Ptr>(callc(g_string_fab, n.chars))
+externfn g_string_len : (ptr<?>) -> int
+defn g-str-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_string_len, g.value))
+externfn g_string_c_str : (ptr<?>) -> ptr<byte>
+defn g-str-value (g:ref<Ptr>) -> ref<String> :
+  val c-str = callc(g_string_c_str, g.value)
+  val len = callc(strlen, c-str)
+  return literal_string(len, c-str)
+externfn g_v2d_fab : (float, float) -> ptr<?>
+defn g-v2d-fab (x:ref<Float>, y:ref<Float>) -> ref<Ptr> : return ref<Ptr>(callc(g_v2d_fab, x.value, y.value))
+externfn g_v2d_elt : (ptr<?>, int) -> float
+defn g-v2d-elt (g:ref<Ptr>, y:ref<Int>) -> ref<Float> : return ref<Float>(callc(g_v2d_elt, g.value, y.value))
+externfn g_v2d_x : (ptr<?>) -> float
+defn g-v2d-x (g:ref<Ptr>) -> ref<Float> : return ref<Float>(callc(g_v2d_x, g.value))
+externfn g_v2d_y : (ptr<?>) -> float
+defn g-v2d-y (g:ref<Ptr>) -> ref<Float> : return ref<Float>(callc(g_v2d_y, g.value))
+externfn g_v3d_fab : (float, float, float) -> ptr<?>
+defn g-v3d-fab (x:ref<Float>, y:ref<Float>, z:ref<Float>) -> ref<Ptr> : return ref<Ptr>(callc(g_v3d_fab, x.value, y.value, z.value))
+externfn g_v3d_elt : (ptr<?>, int) -> float
+defn g-v3d-elt (g:ref<Ptr>, y:ref<Int>) -> ref<Float> : return ref<Float>(callc(g_v3d_elt, g.value, y.value))
+externfn g_v3d_x : (ptr<?>) -> float
+defn g-v3d-x (g:ref<Ptr>) -> ref<Float> : return ref<Float>(callc(g_v3d_x, g.value))
+externfn g_v3d_y : (ptr<?>) -> float
+defn g-v3d-y (g:ref<Ptr>) -> ref<Float> : return ref<Float>(callc(g_v3d_y, g.value))
+externfn g_v3d_z : (ptr<?>) -> float
+defn g-v3d-z (g:ref<Ptr>) -> ref<Float> : return ref<Float>(callc(g_v3d_z, g.value))
+externfn g_v3i_fab : (int, int, int) -> ptr<?>
+defn g-v3i-fab (x:ref<Int>, y:ref<Int>, z:ref<Int>) -> ref<Ptr> : return ref<Ptr>(callc(g_v3i_fab, x.value, y.value, z.value))
+externfn g_v3i_elt : (ptr<?>, int) -> int
+defn g-v3i-elt (g:ref<Ptr>, y:ref<Int>) -> ref<Int> : return ref<Int>(callc(g_v3i_elt, g.value, y.value))
+externfn g_v3i_x : (ptr<?>) -> int
+defn g-v3i-x (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_v3i_x, g.value))
+externfn g_v3i_y : (ptr<?>) -> int
+defn g-v3i-y (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_v3i_y, g.value))
+externfn g_v3i_z : (ptr<?>) -> int
+defn g-v3i-z (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_v3i_z, g.value))
+externfn g_bbox2_min : (ptr<?>) -> ptr<?>
+defn g-bbox2-min (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_bbox2_min, g.value))
+externfn g_bbox2_max : (ptr<?>) -> ptr<?>
+defn g-bbox2-max (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_bbox2_max, g.value))
+externfn g_bbox3_min : (ptr<?>) -> ptr<?>
+defn g-bbox3-min (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_bbox3_min, g.value))
+externfn g_bbox3_max : (ptr<?>) -> ptr<?>
+defn g-bbox3-max (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_bbox3_max, g.value))
+externfn g_mat_fab : (float, float, float, float, float, float, float, float,
+                      float, float, float, float, float, float, float, float) -> ptr<?>
+defn g-mat-fab (i00:ref<Float>, i01:ref<Float>, i02:ref<Float>, i03:ref<Float>,
+                i10:ref<Float>, i11:ref<Float>, i12:ref<Float>, i13:ref<Float>,
+                i20:ref<Float>, i21:ref<Float>, i22:ref<Float>, i23:ref<Float>,
+                i30:ref<Float>, i31:ref<Float>, i32:ref<Float>, i33:ref<Float>) -> ref<Ptr> :
+  return ref<Ptr>(callc(g_mat_fab, i00.value, i01.value, i02.value, i03.value, i10.value, i11.value, i12.value, i13.value,
+                                   i20.value, i21.value, i22.value, i23.value, i30.value, i31.value, i32.value, i33.value))
+externfn g_mat_elt : (ptr<?>, int, int) -> float
+defn g-mat-elt (g:ref<Ptr>, i:ref<Int>, j:ref<Int>) -> ref<Float> : return ref<Float>(callc(g_mat_elt, g.value, i.value, j.value))
+externfn g_array_v2d_fab : (ptr<?>) -> ptr<?>
+defn g-array-v2d-fab (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_array_v2d_fab, g.value))
+externfn g_array_v2d_elt : (ptr<?>, int) -> ptr<?>
+defn g-array-v2d-elt (g:ref<Ptr>, i:ref<Int>) -> ref<Ptr> : return ref<Ptr>(callc(g_array_v2d_elt, g.value, i.value))
+externfn g_array_v2d_len : (ptr<?>) -> int
+defn g-array-v2d-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_array_v2d_len, g.value))
+externfn g_array_v3d_fab : (ptr<?>) -> ptr<?>
+defn g-array-v3d-fab (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_array_v3d_fab, g.value))
+externfn g_array_v3d_elt : (ptr<?>, int) -> ptr<?>
+defn g-array-v3d-elt (g:ref<Ptr>, i:ref<Int>) -> ref<Ptr> : return ref<Ptr>(callc(g_array_v3d_elt, g.value, i.value))
+externfn g_array_v3d_len : (ptr<?>) -> int
+defn g-array-v3d-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_array_v3d_len, g.value))
+externfn g_array_v3i_fab : (ptr<?>) -> ptr<?>
+defn g-array-v3i-fab (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_array_v3i_fab, g.value))
+externfn g_array_v3i_elt : (ptr<?>, int) -> ptr<?>
+defn g-array-v3i-elt (g:ref<Ptr>, i:ref<Int>) -> ref<Ptr> : return ref<Ptr>(callc(g_array_v3i_elt, g.value, i.value))
+externfn g_array_v3i_len : (ptr<?>) -> int
+defn g-array-v3i-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_array_v3i_len, g.value))
+externfn g_nested_v2d_fab : (ptr<?>) -> ptr<?>
+defn g-nested-v2d-fab (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_nested_v2d_fab, g.value))
+externfn g_nested_v2d_elt : (ptr<?>, int) -> ptr<?>
+defn g-nested-v2d-elt (g:ref<Ptr>, i:ref<Int>) -> ref<Ptr> : return ref<Ptr>(callc(g_nested_v2d_elt, g.value, i.value))
+externfn g_nested_v2d_len : (ptr<?>) -> int
+defn g-nested-v2d-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_nested_v2d_len, g.value))
+externfn g_nested_v3d_fab : (ptr<?>) -> ptr<?>
+defn g-nested-v3d-fab (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_nested_v3d_fab, g.value))
+externfn g_nested_v3d_elt : (ptr<?>, int) -> ptr<?>
+defn g-nested-v3d-elt (g:ref<Ptr>, i:ref<Int>) -> ref<Ptr> : return ref<Ptr>(callc(g_nested_v3d_elt, g.value, i.value))
+externfn g_nested_v3d_len : (ptr<?>) -> int
+defn g-nested-v3d-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_nested_v3d_len, g.value))
+externfn g_poly_fab : (ptr<?>) -> ptr<?>
+defn g-poly-fab (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_poly_fab, g.value))
+externfn g_poly_elt : (ptr<?>, int) -> ptr<?>
+defn g-poly-elt (g:ref<Ptr>, i:ref<Int>) -> ref<Ptr> : return ref<Ptr>(callc(g_poly_elt, g.value, i.value))
+externfn g_poly_len : (ptr<?>) -> int
+defn g-poly-len (g:ref<Ptr>) -> ref<Int> : return ref<Int>(callc(g_poly_len, g.value))
+externfn g_mesh_fab : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-mesh-fab (points:ref<Ptr>, faces:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_mesh_fab, points.value, faces.value))
+externfn g_mesh_points : (ptr<?>) -> ptr<?>
+defn g-mesh-points (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_mesh_points, g.value))
+externfn g_mesh_faces : (ptr<?>) -> ptr<?>
+defn g-mesh-faces (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_mesh_faces, g.value))
+externfn g_bbox : (ptr<?>) -> ptr<?>
+defn g-bbox (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_bbox, g.value))
+externfn g_dims : (ptr<?>) -> ptr<?>
+defn g-dims (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_dims, g.value))
+externfn g_center : (ptr<?>) -> ptr<?>
+defn g-center (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_center, g.value))
+externfn g_centering : (ptr<?>) -> ptr<?>
+defn g-centering (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_centering, g.value))
+externfn g_load : (ptr<?>) -> ptr<?>
+defn g-load (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_load, g.value))
+externfn g_save : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-save (s:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_save, s.value, g.value))
+externfn g_to_str : (ptr<?>) -> ptr<?>
+defn g-to-str (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_to_str, g.value))
+externfn g_print : (ptr<?>) -> ptr<?>
+defn g-print (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_print, g.value))
+externfn g_check : (ptr<?>) -> ptr<?>
+defn g-check (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_check, g.value))
+externfn g_pretty_print : (ptr<?>) -> ptr<?>
+defn g-pretty-print (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_pretty_print, g.value))
+externfn g_pi : () -> ptr<?>
+defn g-pi () -> ref<Ptr> : return ref<Ptr>(callc(g_pi))
+externfn g_none2 : () -> ptr<?>
+defn g-none2 () -> ref<Ptr> : return ref<Ptr>(callc(g_none2))
+externfn g_all2 : () -> ptr<?>
+defn g-all2 () -> ref<Ptr> : return ref<Ptr>(callc(g_all2))
+externfn g_none : () -> ptr<?>
+defn g-none () -> ref<Ptr> : return ref<Ptr>(callc(g_none))
+externfn g_all : () -> ptr<?>
+defn g-all () -> ref<Ptr> : return ref<Ptr>(callc(g_all))
+externfn g_circle : (ptr<?>) -> ptr<?>
+defn g-circle (a:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_circle, a.value))
+externfn g_square : (ptr<?>) -> ptr<?>
+defn g-square (a:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_square, a.value))
+externfn g_square_lo_hi : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-square-lo-hi (lo:ref<Ptr>, hi:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_square_lo_hi, lo.value, hi.value))
+externfn g_letter : (ptr<?>) -> ptr<?>
+defn g-letter (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_letter, g.value))
+externfn g_text : (ptr<?>) -> ptr<?>
+defn g-text (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_text, g.value))
+externfn g_elt : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-elt (g:ref<Ptr>, i:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_elt, g.value, i.value))
+externfn g_mag : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-mag (v:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_mag, v.value, g.value))
+externfn g_mag1 : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-mag1 (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_mag1, a.value, g.value))
+externfn g_xmag : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-xmag (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_xmag, a.value, g.value))
+externfn g_ymag : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-ymag (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_ymag, a.value, g.value))
+externfn g_zmag : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-zmag (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_zmag, a.value, g.value))
+externfn g_mov : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-mov (v:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_mov, v.value, g.value))
+externfn g_xmov : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-xmov (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_xmov, a.value, g.value))
+externfn g_ymov : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-ymov (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_ymov, a.value, g.value))
+externfn g_zmov : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-zmov (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_zmov, a.value, g.value))
+externfn g_rot : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-rot (v:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_rot, v.value, g.value))
+externfn g_xrot : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-xrot (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_xrot, a.value, g.value))
+externfn g_yrot : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-yrot (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_yrot, a.value, g.value))
+externfn g_zrot : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-zrot (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_zrot, a.value, g.value))
+externfn g_reflect_x : (ptr<?>) -> ptr<?>
+defn g-reflect-x (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_x, g.value))
+externfn g_reflect_y : (ptr<?>) -> ptr<?>
+defn g-reflect-y (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_y, g.value))
+externfn g_reflect_xy : (ptr<?>) -> ptr<?>
+defn g-reflect-xy (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_xy, g.value))
+externfn g_reflect_z : (ptr<?>) -> ptr<?>
+defn g-reflect-z (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_z, g.value))
+externfn g_reflect_yz : (ptr<?>) -> ptr<?>
+defn g-reflect-yz (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_yz, g.value))
+externfn g_reflect_xz : (ptr<?>) -> ptr<?>
+defn g-reflect-xz (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_xz, g.value))
+externfn g_add : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-add (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_add, a.value, b.value))
+externfn g_mul : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-mul (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_mul, a.value, b.value))
+externfn g_div : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-div (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_div, a.value, b.value))
+externfn g_sub : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-sub (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_sub, a.value, b.value))
+externfn g_intersection : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-intersection (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_intersection, a.value, b.value))
+externfn g_union : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-union (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_union, a.value, b.value))
+externfn g_difference : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-difference (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_difference, a.value, b.value))
+externfn g_not : (ptr<?>) -> ptr<?>
+defn g-not (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_not, g.value))
+externfn g_offset : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-offset (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_offset, a.value, g.value))
+externfn g_hollow : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-hollow (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_hollow, a.value, g.value))
+externfn g_simplify : (ptr<?>) -> ptr<?>
+defn g-simplify (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_simplify, g.value))
+externfn g_slice : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-slice (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_slice, a.value, g.value))
+externfn g_extrude : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-extrude (a:ref<Ptr>, p:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_extrude, a.value, p.value))
+externfn g_thicken : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-thicken (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_thicken, a.value, g.value))
+externfn g_sphere : (ptr<?>) -> ptr<?>
+defn g-sphere (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_sphere, g.value))
+externfn g_cube : (ptr<?>) -> ptr<?>
+defn g-cube (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_cube, g.value))
+externfn g_cube_lo_hi : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-cube-lo-hi (lo:ref<Ptr>, hi:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_cube_lo_hi, lo.value, hi.value))
+externfn g_cone : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-cone (a:ref<Ptr>, p:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_cone, a.value, p.value))
+externfn g_revolve : (ptr<?>) -> ptr<?>
+defn g-revolve (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_revolve, g.value))
+externfn g_hull : (ptr<?>) -> ptr<?>
+defn g-hull (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_hull, g.value))
+externfn g_taper : (ptr<?>, ptr<?>, ptr<?>, ptr<?>) -> ptr<?>
+defn g-taper (l:ref<Ptr>, r0:ref<Ptr>, r1:ref<Ptr>, p:ref<Ptr>) -> ref<Ptr> :
+  return ref<Ptr>(callc(g_taper, l.value, r0.value, r1.value, p.value))
+
+
+

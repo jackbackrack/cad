@@ -8,8 +8,7 @@
 
 using namespace geode;
 
-extern Mesh quick_hull (Mesh mesh);
+extern Mesh quick_hull_mesh (Mesh mesh);
+extern Nested<TV2> quick_hull_poly (Nested<TV2> poly);
 
-  
-  
 #endif

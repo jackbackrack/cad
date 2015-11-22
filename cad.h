@@ -77,6 +77,7 @@ extern Array<TV2> simplify_contour(RawArray<TV2> contour);
 extern Nested<TV2> simplify_poly(Nested<TV2> poly);
 
 extern Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1);
+extern Nested<TV2> union_all(Nested<TV2> cs);
 extern Nested<TV2> intersection(Nested<TV2> c0, Nested<TV2> c1);
 extern Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1);
 
@@ -110,6 +111,9 @@ extern std::string poly_to_str(Nested<TV2> poly);
 extern std::string nested_v3d_to_str(Nested<TV3> polyline);
 extern std::string nested_v2d_to_str(Nested<TV2> polyline);
 extern std::string matrix_to_str(Matrix<T,4> M);
+
+extern void save_polygon(std::string filename, Nested<TV2> polygon);
+extern void save_polyline(std::string filename, Nested<TV2> polyline);
 
 extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
 

@@ -7,6 +7,7 @@
 #include <geode/mesh/SegmentSoup.h>
 #include <geode/mesh/TriangleTopology.h>
 #include <geode/mesh/improve_mesh.h>
+#include <fstream>
 
 double rndd () {
   return (double)((double)rand() / (double)RAND_MAX);
@@ -310,6 +311,11 @@ Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1) {
   // printf("UNION POLY\n");
   return maybe_simplify_poly(res);
 }
+Nested<TV2> union_all(Nested<TV2> c0) {
+  auto res = polygon_union(c0);
+  // printf("UNION POLY\n");
+  return maybe_simplify_poly(res);
+}
 
 Nested<TV2> intersection(Nested<TV2> c0, Nested<TV2> c1) {
   return maybe_simplify_poly(polygon_intersection(c0, c1));
@@ -318,6 +324,36 @@ Nested<TV2> intersection(Nested<TV2> c0, Nested<TV2> c1) {
 Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1) {
   return maybe_simplify_poly(polygon_union(c0, invert_poly(c1)));
 }
+
+void save_svg_header(std::fstream &fs) {
+  fs << "<?xml version=\"1.0\" standalone=\"no\"?>\n";
+  fs << "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n";
+  fs << "<svg width=\"10cm\" height=\"10cm\" viewBox=\"0 0 100000 100000\" xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\">\n";
+}
+
+void save_poly_star(std::string filename, std::string kind, Nested<TV2> poly) {
+  std::fstream fs;
+  fs.open (filename, std::fstream::out);
+  save_svg_header(fs);
+  for (auto c : poly) {
+    fs << "<" << kind << " fill=\"none\" stroke=\"black\" stroke-width=\"1\" points=\"";
+    for (auto p : c) {
+      fs << " " << ((1000.0 * p.x) + 50000) << "," << ((-1000.0 * p.y) + 50000);
+    }
+    fs << "\"  />\n";
+  }
+  fs << "</svg>\n";
+  fs.close();
+}
+
+void save_polygon(std::string filename, Nested<TV2> polygon) {
+  save_poly_star(filename, "polygon", polygon);
+}
+
+void save_polyline(std::string filename, Nested<TV2> polyline) {
+  save_poly_star(filename, "polyline", polyline);
+}
+
 
 Mesh maybe_simplify_mesh (Mesh mesh, bool is_simplify) {
   // report_simplify_mesh(mesh);

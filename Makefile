@@ -19,7 +19,7 @@ else
   endif
 endif
 
-all: cad
+all: cad cad.a
 
 clean:
 	rm -f *.o cad
@@ -36,7 +36,7 @@ iso-surface.o: cad.h iso-surface.h iso-surface.cpp
 geom.o: cad.h geom.h geom.cpp
 	clang++ -c $(FLAGS) $(INCS) geom.cpp
 
-read-eval.o: cad.h read-eval.h read-eval.cpp
+read-eval.o: cad.h geom.h read-eval.h read-eval.cpp
 	clang++ -c $(FLAGS) $(INCS) read-eval.cpp
 
 app.o: cad.h app.h read-eval.h app.cpp
@@ -44,3 +44,6 @@ app.o: cad.h app.h read-eval.h app.cpp
 
 cad: cad.o hull.o iso-surface.o geom.o read-eval.o app.o 
 	clang++ -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o geom.o read-eval.o app.o $(LIBS)
+
+cad.a: cad.o hull.o iso-surface.o geom.o
+	ar -v -r -u cad.a $^

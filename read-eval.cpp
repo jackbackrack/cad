@@ -304,6 +304,14 @@ Geom* parse_factor(Tokenizer& s) {
             g = g_zmag(args[0], args[1]);
           } else if (tok1.sym == "slice") {
             g = g_slice(args[0], args[1]);
+          } else if (tok1.sym == "bbox") {
+            g = g_bbox(args[0]);
+          } else if (tok1.sym == "dims") {
+            g = g_dims(args[0]);
+          } else if (tok1.sym == "center") {
+            g = g_center(args[0]);
+          } else if (tok1.sym == "centering") {
+            g = g_centering(args[0]);
           } else if (tok1.sym == "simplify") {
             g = g_simplify(args[0]);
           } else if (tok1.sym == "extrude") {
@@ -426,10 +434,8 @@ Geom* parse_term(Tokenizer& s) {
     s.get();
     if (tok.type == '*')
       g = g_mul(g, parse_factor(s));
-    /*
     else if (tok.type == '/')
-      g = div(g, parse_factor(s));
-    */
+      g = g_div(g, parse_factor(s));
     tok = s.peek();
   }
   return g;
@@ -610,6 +616,28 @@ int display_polyline3 (Nested<TV3> polyline) {
   return dl;
 }
 
+int display_v3d (TV3 p) {
+  int dl = glGenLists(1);
+  glNewList(dl, GL_COMPILE);
+  glColor4f(1.0, 1.0, 1.0, 1.0);
+  glBegin(GL_POINTS);
+  glVertex3d(p.x, p.y, p.z);
+  glEnd();
+  glEndList();
+  return dl;
+}
+
+int display_v2d (TV2 p) {
+  int dl = glGenLists(1);
+  glNewList(dl, GL_COMPILE);
+  glColor4f(1.0, 1.0, 1.0, 1.0);
+  glBegin(GL_POINTS);
+  glVertex2d(p.x, p.y);
+  glEnd();
+  glEndList();
+  return dl;
+}
+
 int compile_geom (std::string expr, bool is_show_lines, bool is_show_normals) {
   // auto star  = star_poly(1.0, 2.0, 4);
   // auto shape = extrude(-8.0, 8.0, star);
@@ -625,6 +653,10 @@ int compile_geom (std::string expr, bool is_show_lines, bool is_show_normals) {
     return display_poly(g_poly_val(shape));
   else if (shape->k == mesh_kind)
     return display_mesh(g_mesh_val(shape), is_show_lines, is_show_normals);
+  else if (shape->k == v3d_kind)
+    return display_v3d(g_v3d_val(shape));
+  else if (shape->k == v2d_kind)
+    return display_v2d(g_v2d_val(shape));
   else {
     error("UNDISPLAYABLE GEOM");
     return 0;

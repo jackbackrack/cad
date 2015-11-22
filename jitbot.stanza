@@ -1,320 +1,507 @@
-;; TODO:
-;; INFIX OPS
+defpackage jitbot :
+   import core
+   import verse
 
-defn print-list-infix (o:OutputStream, name:String, s:Streamable) :
-  var first? = true
+public definterface Geom
+defmulti ptr (g:Geom) -> ?
+defmethod print (o:OutputStream, g:Geom) :
+  print-all(o ["GEOM<?>"])
+
+definterface Args <: Geom
+defmulti add (args:Args, arg:Geom)
+defmulti len (args:Args) -> Int
+defn Args () :
+  val ptr = ($do-prim ls g-args-fab)
+  new Args :
+    defmethod ptr (this) : ptr
+    defmethod add (this, a:Geom) :
+      println-all(["-> ARGS ADDING " a])
+      val parg = ptr(a)
+      ($do-prim ls g-args-add ptr parg)
+      false
+    defmethod len (this) : ($do-prim ls g-args-len ptr)
+
+defn array-args (s:Streamable<Geom>) -> Args :
+  val args = Args()
   for e in s do :
-    if first?: first? = false else: print-all(o, [" " name " "])
-    print(o, e)
+    println-all(["ARGS ADDING " e])
+    add(args, e)
+  args
 
-defn do-print-list (o:OutputStream, name:String, s:Streamable, do-print:(OutputStream, ?) -> False) :
-  print-all(o, [name "("])
-  var first? = true
-  for e in s do :
-    if first?: first? = false else: print(o, ", ")
-    do-print(o, e)
-  print(o, ")")
+public defclass Num <: Geom
+public defmulti value (n:Num) -> Float
+public defn Num (p:?) :
+  new Num :
+    defmethod ptr (this) : p
+    defmethod value (this) : ($do-prim ls g-num-value p)
+public defn num (f:Float) : Num(($do-prim ls g-num-fab f))
+public defn pprint (a:Num) -> Num :
+  val p = ptr(a)
+  Num(($do-prim ls g-pretty-print p))
+defmethod print (o:OutputStream, g:Num) :
+  print-all(o ["Num<?>"])
 
-defn print-list (o:OutputStream, name:String, s:Streamable) :
-  do-print-list(o, name, s, print)
+public defclass Str <: Geom
+public defmulti value (n:Str) -> String
+public defn Str (ptr:?) :
+  new Str :
+    defmethod ptr (this) : ptr
+    defmethod value (this) : ($do-prim ls g-str-value ptr)
+public defn str (s:String) : Str(($do-prim ls g-str-fab s))
 
-defn print-list-list (o:OutputStream, outer:String, inner:String, s:Streamable<Streamable>) :
-  do-print-list(o, outer, s, print-list{_, inner, _})
+public defclass V2d <: Geom
+public defmulti x (v:V2d) -> Float
+public defmulti y (v:V2d) -> Float
+public defmulti elt (v:V2d, i:Int) -> Float
+public defn V2d (ptr:?) :
+  new V2d :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : ($do-prim ls g-v2d-elt ptr i)
+    defmethod x (this) : ($do-prim ls g-v2d-x ptr)
+    defmethod y (this) : ($do-prim ls g-v2d-y ptr)
+public defn v2d (x:Float, y:Float) : V2d(($do-prim ls g-v2d-fab x y))
+public defn vec (x:Float, y:Float) : v2d(x, y)
+public defn pprint (a:V2d) -> V2d :
+  val p = ptr(a)
+  V2d(($do-prim ls g-pretty-print p))
+defmethod print (o:OutputStream, g:V2d) :
+  print-all(o ["V2d<?>"])
 
-definterface Exp
+public defclass V3d <: Geom
+public defmulti x (v:V3d) -> Float
+public defmulti y (v:V3d) -> Float
+public defmulti z (v:V3d) -> Float
+public defmulti elt (v:V3d, i:Int) -> Float
+public defn V3d (ptr:?) :
+  new V3d :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : ($do-prim ls g-v3d-elt ptr i)
+    defmethod x (this) : ($do-prim ls g-v3d-x ptr)
+    defmethod y (this) : ($do-prim ls g-v3d-y ptr)
+    defmethod z (this) : ($do-prim ls g-v3d-z ptr)
+public defn V3d (x:Float, y:Float, z:Float) : V3d(($do-prim ls g-v3d-fab x y z))
+public defn vec (x:Float, y:Float, z:Float) : V3d(x, y, z)
+public defn pprint (a:V3d) -> V3d :
+  val p = ptr(a)
+  V3d(($do-prim ls g-pretty-print p))
 
-defstruct Op <: Exp :
-  name: String
-  args: Streamable<ExpT>
-  infix?: True|False
+public defclass V3i <: Geom
+public defmulti x (v:V3i) -> Int
+public defmulti y (v:V3i) -> Int
+public defmulti z (v:V3i) -> Int
+public defmulti elt (v:V3i, i:Int) -> Int
+public defn V3i (ptr:?) :
+  new V3i :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : ($do-prim ls g-v3i-elt ptr i)
+    defmethod x (this) : ($do-prim ls g-v3i-x ptr)
+    defmethod y (this) : ($do-prim ls g-v3i-y ptr)
+    defmethod z (this) : ($do-prim ls g-v3i-z ptr)
+public defn V3i (x:Int, y:Int, z:Int) : V3i(($do-prim ls g-v3i-fab x y z))
+public defn vec (x:Int, y:Int, z:Int) : V3i(x, y, z)
 
-defmethod print (o:OutputStream, e:Op) :
-  if infix?(e):
-    print-list-infix(o, name(e), args(e))
-  else :
-    print-list(o, name(e), args(e))
+public defclass ArrayV2d <: Geom
+public defmulti elt (v:ArrayV2d, i:Int) -> V2d
+public defmulti len (v:ArrayV2d) -> Int
+public defn ArrayV2d (ptr:?) :
+  new ArrayV2d :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : V2d(($do-prim ls g-array-v2d-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-array-v2d-len ptr)
+public defn arrayV2d (points:Streamable<V2d>) :
+  val args = array-args(points)
+  ArrayV2d(($do-prim ls g-array-v2d-fab args))
+public defn pprint (a:ArrayV2d) -> ArrayV2d :
+  val pa = ptr(a)
+  ArrayV2d(($do-prim ls g-pretty-print pa))
 
-definterface ExpT
-defmulti exp<?T> (t:?T&ExpT) -> Exp
+public defclass ArrayV3d <: Geom
+public defmulti elt (v:ArrayV3d, i:Int) -> V3d
+public defmulti len (v:ArrayV3d) -> Int
+public defn ArrayV3d (ptr:?) :
+  new ArrayV3d :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : V3d(($do-prim ls g-array-v3d-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-array-v3d-len ptr)
+public defn arrayV3d (points:Streamable<V3d>) :
+  val args = array-args(points)
+  ArrayV3d(($do-prim ls g-array-v3d-fab args))
+public defn pprint (a:ArrayV3d) -> ArrayV3d :
+  val pa = ptr(a)
+  ArrayV3d(($do-prim ls g-pretty-print pa))
 
-defstruct NumT <: ExpT :
-  exp: Exp with: (as-method => true)
-defstruct StrT <: ExpT :
-  exp: Exp with: (as-method => true)
-defstruct Vec2T <: ExpT :
-  exp: Exp with: (as-method => true)
-defstruct Vec3T <: ExpT :
-  exp: Exp with: (as-method => true)
-defstruct MatT <: ExpT :
-  exp: Exp with: (as-method => true)
+public defclass ArrayV3i <: Geom
+public defmulti elt (v:ArrayV3i, i:Int) -> V3i
+public defmulti len (v:ArrayV3i) -> Int
+public defn ArrayV3i (ptr:?) :
+  new ArrayV3i :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int) : V3i(($do-prim ls g-array-v3i-elt ptr i))
+    defmethod len (this) : ($do-prim ls g-array-v3i-len ptr)
+public defn arrayV3i (points:Streamable<V3i>) :
+  val args = array-args(points)
+  ArrayV3i(($do-prim ls g-array-v3i-fab args))
+public defn pprint (a:ArrayV3i) -> ArrayV3i :
+  val pa = ptr(a)
+  ArrayV3i(($do-prim ls g-pretty-print pa))
 
-definterface Geom2T <: ExpT
-definterface Geom3T <: Geom2T
+public defclass BBox2 <: Geom
+public defmulti min (bb:BBox2) -> V2d
+public defmulti max (bb:BBox2) -> V2d
+public defn BBox2 (ptr:?) :
+  new BBox2 :
+    defmethod ptr (this) : ptr
+    defmethod min (this) : V2d(($do-prim ls g-bbox2-min ptr))
+    defmethod max (this) : V2d(($do-prim ls g-bbox2-max ptr))
 
-defstruct PolygonT <: Geom2T :
-  exp: Exp with: (as-method => true)
-defstruct PolylineT <: Geom3T :
-  exp: Exp with: (as-method => true)
-defstruct MeshT <: Geom3T :
-  exp: Exp with: (as-method => true)
+public defclass BBox3 <: Geom
+public defmulti min (bb:BBox3) -> V3d
+public defmulti max (bb:BBox3) -> V3d
+public defn BBox3 (ptr:?) :
+  new BBox3 :
+    defmethod ptr (this) : ptr
+    defmethod min (this) : V3d(($do-prim ls g-bbox3-min ptr))
+    defmethod max (this) : V3d(($do-prim ls g-bbox3-max ptr))
 
-defn pprint (a:PolygonT) -> PolygonT :
-  PolygonT(Op("pprint", [a], false))
-defn bit-or (a:PolygonT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("|", [a, b], true))
-defn bit-and (a:PolygonT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("&", [a, b], true))
-defn minus (a:PolygonT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("\\", [a, b], true))
-defn times (a:MatT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("*", [a, b], true))
-defn mag (a:Vec2T, b:PolygonT) -> PolygonT :
-  PolygonT(Op("mag", [a, b], false))
-defn mag1 (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("mag1", [a, b], false))
-defn xmag (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("xmag", [a, b], false))
-defn ymag (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("ymag", [a, b], false))
-defn mov (a:Vec2T, b:PolygonT) -> PolygonT :
-  PolygonT(Op("mov", [a, b], false))
-defn xmov (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("xmov", [a, b], false))
-defn ymov (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("ymov", [a, b], false))
-defn rot (a:Vec2T, b:PolygonT) -> PolygonT :
-  PolygonT(Op("rot", [a, b], false))
-defn xrot (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("xrot", [a, b], false))
-defn yrot (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("yrot", [a, b], false))
-defn extrude (a:NumT, b:PolygonT) -> MeshT :
-  MeshT(Op("extrude", [a, b], false))
-defn revolve (p:PolygonT) -> MeshT :
-  MeshT(Op("revolve", [p], false))
-defn offset (a:NumT, b:PolygonT) -> PolygonT :
-  PolygonT(Op("offset", [a, b], false))
+public defclass Mat <: Geom
+public defmulti elt (v:Mat, i:Int, j:Int) -> Float
+public defn Mat (ptr:?) :
+  new Mat :
+    defmethod ptr (this) : ptr
+    defmethod elt (this, i:Int, j:Int) : ($do-prim ls g-mat-elt ptr i j)
+public defn mat (i00:Float, i01:Float, i02:Float, i03:Float,
+                 i10:Float, i11:Float, i12:Float, i13:Float,
+                 i20:Float, i21:Float, i22:Float, i23:Float,
+                 i30:Float, i31:Float, i32:Float, i33:Float) :
+  Mat(($do-prim ls g-mat-fab
+         i00 i01 i02 i03 i10 i11 i12 i13 i20 i21 i22 i23 i30 i31 i32 i33))
 
-defn pprint (a:PolylineT) -> PolylineT :
-  PolylineT(Op("pprint", [a], false))
-defn times (a:MatT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("*", [a, b], true))
-defn mag (a:Vec3T, b:PolylineT) -> PolylineT :
-  PolylineT(Op("mag", [a, b], false))
-defn mag1 (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("mag1", [a, b], false))
-defn xmag (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("xmag", [a, b], false))
-defn ymag (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("ymag", [a, b], false))
-defn zmag (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("zmag", [a, b], false))
-defn mov (a:Vec3T, b:PolylineT) -> PolylineT :
-  PolylineT(Op("mov", [a, b], false))
-defn xmov (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("xmov", [a, b], false))
-defn ymov (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("ymov", [a, b], false))
-defn zmov (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("zmov", [a, b], false))
-defn rot (a:Vec3T, b:PolylineT) -> PolylineT :
-  PolylineT(Op("rot", [a, b], false))
-defn xrot (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("xrot", [a, b], false))
-defn yrot (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("yrot", [a, b], false))
-defn zrot (a:NumT, b:PolylineT) -> PolylineT :
-  PolylineT(Op("zrot", [a, b], false))
-defn offset (a:NumT, b:PolylineT) -> PolygonT :
-  PolygonT(Op("offset", [a, b], false))
+public definterface Geom2 <: Geom
+public definterface Geom3 <: Geom2
 
-defn pprint (a:MeshT) -> MeshT :
-  MeshT(Op("pprint", [a], false))
-defn bit-or (a:MeshT, b:MeshT) -> MeshT :
-  MeshT(Op("|", [a, b], true))
-defn bit-and (a:MeshT, b:MeshT) -> MeshT :
-  MeshT(Op("&", [a, b], true))
-defn minus (a:MeshT, b:MeshT) -> MeshT :
-  MeshT(Op("\\", [a, b], true))
-defn times (a:MatT, b:MeshT) -> MeshT :
-  MeshT(Op("*", [a, b], true))
-defn mag (a:Vec3T, b:MeshT) -> MeshT :
-  MeshT(Op("mag", [a, b], false))
-defn mag1 (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("mag1", [a, b], false))
-defn xmag (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("xmag", [a, b], false))
-defn ymag (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("ymag", [a, b], false))
-defn zmag (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("zmag", [a, b], false))
-defn mov (a:Vec3T, b:MeshT) -> MeshT :
-  MeshT(Op("mov", [a, b], false))
-defn xmov (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("xmov", [a, b], false))
-defn ymov (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("ymov", [a, b], false))
-defn zmov (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("zmov", [a, b], false))
-defn rot (a:Vec3T, b:MeshT) -> MeshT :
-  MeshT(Op("rot", [a, b], false))
-defn xrot (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("xrot", [a, b], false))
-defn yrot (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("yrot", [a, b], false))
-defn zrot (a:NumT, b:MeshT) -> MeshT :
-  MeshT(Op("zrot", [a, b], false))
-defn slice (a:NumT, b:MeshT) -> PolygonT :
-  PolygonT(Op("slice", [a, b], false))
+public definterface Polygon <: Geom2 
+public defn Polygon (ptr:?) :
+  new Polygon :
+    defmethod ptr (this) : ptr
+public defn polygon (contours:Streamable<Streamable<V2d>>) :
+  val args = array-args(stream(arrayV2d, contours))
+  Polygon(($do-prim ls g-poly-fab args))
+public defn polygon (contour:Streamable<V2d>) : polygon([contour])
 
-defmethod print (o:OutputStream, t:ExpT) :
-  print(o, exp(t))
+public definterface Polyline <: Geom3 
+public defn Polyline (ptr:?) :
+  new Polyline :
+    defmethod ptr (this) : ptr
+public defn polyline (lines:Streamable<Streamable<V3d>>) : 
+  val args = array-args(stream(arrayV3d, lines))
+  Polyline(($do-prim ls g-nested-v3d-fab args))
+public defn polyline (line:Streamable<V3d>) : polyline([line])
 
-defstruct NumE <: Exp :
-  x: Float
-defn num (x:Float) -> NumT : NumT(NumE(x))
-defn num (x:Int) -> NumT : num(to-float(x))
+public definterface Mesh <: Geom3 
+public defn Mesh (ptr:?) :
+  new Mesh :
+    defmethod ptr (this) : ptr
+public defn mesh (points:Streamable<V3d>, faces:Streamable<V3i>) :
+  val pp = ptr(arrayV3d(points))
+  val pf = ptr(arrayV3i(faces))
+  Mesh(($do-prim ls g-mesh-fab pp pf))
 
-defmethod print (o:OutputStream, e:NumE) :
-  print(o, x(e))
+public defn pprint (a:Polygon) -> Polygon :
+  val p = ptr(a)
+  Polygon(($do-prim ls g-pretty-print p))
+public defn bbox (g:Polygon) -> BBox2 :
+  val p = ptr(g)
+  BBox2(($do-prim ls g-bbox p))
+public defn bit-or (a:Polygon, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-union pa pb))
+public defn bit-and (a:Polygon, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-intersection pa pb))
+public defn minus (a:Polygon, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-difference pa pb))
+public defn times (a:Mat, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-mul pa pb))
+public defn mag (a:V2d, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-mag pa pb))
+public defn mag1 (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-mag1 pa pb))
+public defn xmag (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-xmag pa pb))
+public defn ymag (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-ymag pa pb))
+public defn mov (a:V2d, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-mov pa pb))
+public defn xmov (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-xmov pa pb))
+public defn ymov (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-ymov pa pb))
+public defn rot (a:V2d, b:Polygon) -> Polygon :
+  val pa = ptr(b)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-rot pa pb))
+public defn xrot (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-xrot pa pb))
+public defn yrot (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-yrot pa pb))
+public defn extrude (a:Num, b:Polygon) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-extrude pa pb))
+public defn revolve (p:Polygon) -> Mesh :
+  val pp = ptr(p)
+  Mesh(($do-prim ls g-revolve pp))
+public defn offset (a:Num, b:Polygon) -> Polygon :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polygon(($do-prim ls g-offset pa pb))
 
-defn letter (a:StrT) -> PolylineT :
-  PolylineT(Op("letter", [a], false))
+public defn pprint (a:Polyline) -> Polyline :
+  val pa = ptr(a)
+  Polyline(($do-prim ls g-pretty-print pa))
+public defn bbox (g:Polyline) -> BBox3 :
+  val pg = ptr(g)
+  BBox3(($do-prim ls g-bbox pg))
+public defn bit-or (a:Polyline, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-union pa pb))
+public defn bit-and (a:Polyline, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-intersection pa pb))
+public defn minus (a:Polyline, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-difference pa pb))
+public defn times (a:Mat, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-mul pa pb))
+public defn mag (a:V3d, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-mag pa pb))
+public defn mag1 (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-mag1 pa pb))
+public defn xmag (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-xmag pa pb))
+public defn ymag (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-ymag pa pb))
+public defn zmag (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-zmag pa pb))
+public defn mov (a:V3d, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-mov pa pb))
+public defn xmov (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-xmov pa pb))
+public defn ymov (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-ymov pa pb))
+public defn zmov (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-zmov pa pb))
+public defn rot (a:V3d, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-rot pa pb))
+public defn xrot (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-xrot pa pb))
+public defn yrot (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-yrot pa pb))
+public defn zrot (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-zrot pa pb))
+;; defn extrude (a:Float, b:Polyline) -> Mesh :
+;;   Polyline(($do-prim ls g-extrude ($do-prim ls g-num-fab a) pb))
+;; defn revolve (g:Polyline) -> Mesh :
+;;   Polyline(($do-prim ls g-revolve ptr(g)))
+public defn offset (a:Num, b:Polyline) -> Polyline :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Polyline(($do-prim ls g-offset pa pb))
 
-defn text (a:StrT) -> PolylineT :
-  PolylineT(Op("text", [a], false))
+public defn pprint (a:Mesh) -> Mesh :
+  val pa = ptr(a)
+  Mesh(($do-prim ls g-pretty-print pa))
+public defn bbox (g:Mesh) -> BBox3 :
+  val pg = ptr(g)
+  BBox3(($do-prim ls g-bbox pg))
+public defn bit-or (a:Mesh, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-union pa pb))
+public defn bit-and (a:Mesh, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-intersection pa pb))
+public defn minus (a:Mesh, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-difference pa pb))
+public defn times (a:Mat, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-mul pa pb))
+public defn mag (a:V3d, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-mag pa pb))
+public defn mag1 (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-mag1 pa pb))
+public defn xmag (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-xmag pa pb))
+public defn ymag (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-ymag pa pb))
+public defn zmag (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-zmag pa pb))
+public defn mov (a:V3d, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-mov pa pb))
+public defn xmov (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-ymov pa pb))
+public defn ymov (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-ymov pa pb))
+public defn zmov (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-zmov pa pb))
+public defn rot (a:V3d, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-rot pa pb))
+public defn xrot (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(b)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-xrot pa pb))
+public defn yrot (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-yrot pa pb))
+public defn zrot (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-zrot pa pb))
+;; defn extrude (a:Num, b:Mesh) -> Mesh :
+;;   Mesh(($do-prim ls g-extrude ($do-prim ls g-num-fab a) pb))
+;; defn revolve (g:Mesh) -> Mesh :
+;;   Mesh(($do-prim ls g-revolve ptr(g)))
+public defn offset (a:Num, b:Mesh) -> Mesh :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Mesh(($do-prim ls g-offset pa pb))
+public defn letter (a:String) -> Polyline :
+  val pa = ($do-prim ls g-str-fab a)
+  Polyline(($do-prim ls g-letter pa))
+public defn text (a:String) -> Polyline :
+  val pa = ($do-prim ls g-str-fab a)
+  Polyline(($do-prim ls g-text pa))
+public defn circle (r:Num) -> Polygon :
+  val pr = ptr(r)
+  Polygon(($do-prim ls g-circle pr))
+public defn square (r:Num) -> Polygon :
+  val pr = ptr(r)
+  Polygon(($do-prim ls g-square pr))
+public defn sphere (r:Num) -> Mesh :
+  val pr = ptr(r)
+  Mesh(($do-prim ls g-sphere pr))
+public defn cube (r:Num) -> Mesh :
+  val pr = ptr(r)
+  Mesh(($do-prim ls g-cube pr))
+public defn load (s:String) -> Mesh :
+  val ps = ($do-prim ls g-str-fab s)
+  Mesh(($do-prim ls g-load ps))
+public defn save (s:String, m:Mesh) -> Mesh :
+  val ps = ($do-prim ls g-str-fab s)
+  val pm = ptr(m)
+  Mesh(($do-prim ls g-save ps pm))
 
-defn circle (r:NumT) -> PolygonT :
-  PolygonT(Op("circle", [r], false))
+;; definterface GeomContainer<T>
+;; defmulti elts<?T> (c:GeomContainer<?T>) -> Array<T>
+;; 
+;; defclass Joint
+;; defmulti name (j:Joint) -> String
+;; defmulti pose (j:Joint) -> Mat
+;; defmulti limits (j:Joint) -> Tuple(Float, Float)
+;; 
+;; definterface Layer <: GeomContainer<Geometry>
+;; defmulti color (l:Layer)
+;; 
+;; definterface Block <: GeomContainer<Layer>
+;; defmulti pose (b:Block) -> Mat
+;; 
+;; definterface Layout<T> <: GeomContainer<T&Block>
+;; defmulti solved<?T> (l:T?&Layout) -> T
+;; 
+;; definterface Body <: Block
+;; defmulti joints (b:Body)
+;; 
+;; deftype Constraint String
+;; 
+;; defstruct JointRef :
+;;   mechanism: Mechanism
+;;   body: Body
+;;   joint: Joint
+;; 
+;; definterface Mechanism <: Layout<Body>
+;; defmulti connections (m:Mechanism) -> Array<JointRef>
+;; defmulti state (m:Mechanism) -> Array<Float>
+;; defmulti constraints (m:Mechanism) -> Array<Constraint>
+;; defmulti children (m:Mechanism) -> Array<Mechanism>
 
-defn square (r:NumT) -> PolygonT :
-  PolygonT(Op("square", [r], false))
-
-defn sphere (r:NumT) -> MeshT :
-  MeshT(Op("sphere", [r], false))
-
-defn cube (r:NumT) -> MeshT :
-  MeshT(Op("square", [r], false))
-
-defn load (s:StrT) -> MeshT :
-  MeshT(Op("load", [s], false))
-
-defn save (s:StrT, m:MeshT) -> MeshT :
-  MeshT(Op("save", [s, m], false))
-
-defstruct StrE <: Exp :
-  x: String
-defn Str (x:String) -> StrT : StrT(StrE(x))
-
-defmethod print (o:OutputStream, e:StrE) :
-  print(o, x(e))
-
-defstruct Vec2E <: Exp :
-  x: NumT
-  y: NumT
-
-defn vec (x:NumT,y:NumT) -> Vec2T : Vec2T(Vec2E(x,y))
-defn vec (x:Float,y:Float) -> Vec2T : vec(num(x),num(y))
-
-defmethod print (o:OutputStream, e:Vec2E) :
-  print-all(o, ["vec(" x(e) "," y(e) ")"])
-
-defstruct Vec3E <: Exp :
-  x: NumT
-  y: NumT
-  z: NumT
-
-defn vec (x:NumT,y:NumT,z:NumT) -> Vec3T : Vec3T(Vec3E(x,y,z))
-defn vec (x:Float,y:Float,z:Float) -> Vec3T : vec(num(x),num(y),num(z))
-
-defmethod print (o:OutputStream, e:Vec3E) :
-  print-all(o, ["vec(" x(e) "," y(e) "," z(e) ")"])
-
-defstruct MatE <: Exp :
-  elts: Streamable<NumT>
-
-defn mat (elts:Streamable<NumT>) -> MatT : MatT(MatE(elts))
-
-defmethod print (o:OutputStream, e:MatE) :
-  print-list(o, "mat", elts(e))
-
-defstruct PolylineE <: Exp :
-  elts: Streamable<Streamable<Vec3T>>
-
-defn polyline (elts:Streamable<Streamable<Vec3T>>) -> PolylineT : PolylineT(PolylineE(elts))
-
-defmethod print (o:OutputStream, e:PolylineE) :
-  print-list-list(o, "polyline", "line3", elts(e))
-
-defstruct PolygonE <: Exp :
-  elts: Streamable<Streamable<Vec2T>>
-
-defn polygon (elts:Streamable<Streamable<Vec2T>>) -> PolygonT : PolygonT(PolygonE(elts))
-defn polygon (elts:Streamable<Vec2T>) -> PolygonT : polygon(list(elts))
-
-defmethod print (o:OutputStream, e:PolygonE) :
-  print-list-list(o, "polygon", "contour", elts(e))
-
-defstruct MeshE <: Exp :
-  faces: Streamable<Vec3T>
-  vertices: Streamable<Vec3T>
-
-defn mesh (faces:Streamable<Vec3T>,vertices:Streamable<Vec3T>) -> MeshT :
-  MeshT(MeshE(faces, vertices))
-
-defmethod print (o:OutputStream, e:MeshE) :
-  print(o, "Mesh(")
-  print-list(o, "faces", faces(e))
-  print(o, ", ")
-  print-list(o, "vertices", vertices(e))
-  print(o, ")")
-
-val pi = 3.1415
-
-defn star (n:Int, rmin:Float, rmax:Float) -> PolygonT :
-  val points = generate<Vec2T> :
-    for i in 0 to 2 * n do :
-      val a = (2.0 * pi * to-float(i)) / (2.0 * to-float(n))
-      val r = if i % 2 == 0 : rmax else : rmin
-      yield(vec(num(r * cos(a)), num(r * sin(a))))
-  polygon(points)
-
-;; println(union(circle(num(1.0)),square(num(2.0))))
-;; println(polygon([[vec(-1.0,-1.0),vec(0.0,1.0),vec(1.0,-1.0)]]))
-;; println(square(num(1.0)) | circle(num(1.5)))
-;; println(extrude(num(16.0),square(num(2)) - square(num(1))))
-println(extrude(num(10), star(7, 3.0, 5.0) - circle(num(2))))
-
-definterface GeomContainer<T>
-defmulti elts<?T> (c:GeomContainer<?T>) -> Array<T>
-
-defclass Joint
-defmulti name (j:Joint) -> String
-defmulti pose (j:Joint) -> Mat
-defmulti limits (j:Joint) -> Tuple(Float, Float)
-
-definterface Layer <: GeomContainer<Geometry>
-defmulti color (l:Layer)
-
-definterface Block <: GeomContainer<Layer>
-defmulti pose (b:Block) -> Mat
-
-definterface Layout<T> <: GeomContainer<T&Block>
-defmulti solved<?T> (l:T?&Layout) -> T
-
-definterface Body <: Block
-defmulti joints (b:Body)
-
-deftype Constraint String
-
-defstruct JointRef :
-  mechanism: Mechanism
-  body: Body
-  joint: Joint
-
-definterface Mechanism <: Layout<Body>
-defmulti connections (m:Mechanism) -> Array<JointRef>
-defmulti state (m:Mechanism) -> Array<Float>
-defmulti constraints (m:Mechanism) -> Array<Constraint>
-defmulti children (m:Mechanism) -> Array<Mechanism>
 

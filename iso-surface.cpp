@@ -309,8 +309,10 @@ TV3 VertexInterp(const TV3 &p1, const TV3 &p2, T valp1, T valp2) {
   return (p1 + (-valp1 / (valp2 - valp1)) * (p2 - p1));
 }
 
-int IsoSurface::intersection(GridCell &Grid, int from, int to, int base, int dir) {
-  auto iidx = vec(Grid.ijk[base].x, Grid.ijk[base].y, Grid.ijk[base].z, dir);
+// in order to make this water tight hash intersection with unique edge code
+// edge code is formed from indices of base edge vertex and edge dir 0,1,2 for x,y,z
+int IsoSurface::intersection(GridCell &Grid, int from, int to, int edge_base, int edge_dir) {
+  auto iidx = vec(Grid.ijk[edge_base].x, Grid.ijk[edge_base].y, Grid.ijk[edge_base].z, edge_dir);
   int vidx  = _Intersections.get_default(iidx, -1);
   // printf("LOOKING FOR [%d,%d,%d,%d]: ", iidx[0], iidx[1], iidx[2], iidx[3]);
   if (vidx >= 0) {

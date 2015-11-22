@@ -11,19 +11,43 @@
 #include <map>
 #include <set>
 
+int g_kind(Geom* g) { return g->k; }
+
 extern Mesh quick_hull(Mesh mesh);
 
-Geom* g_args(void) { return new ArgsGeom(); }
-Geom* g_args_add(Geom* g) { g_args_val(g).push_back(g); return g; }
+Geom* g_args_fab(void) { return new ArgsGeom(); }
+Geom* g_args_add(Geom* g, Geom* e) {
+  ((ArgsGeom*)g)->val.push_back(e);
+  printf("ADDING ARGS %lx ARG %lx LEN %d\n", g, e, g_args_len(g)); g_pretty_print(e); fflush(stdout);
+  return g;
+}
 int g_args_len(Geom* g) { return g_args_val(g).size(); }
 std::vector<Geom*> g_args_val(Geom* g) {
   ensure(g->k == args_kind, "NOT ARGS");
   return ((ArgsGeom*)g)->val;
 }
 
+inline float int_as_float(int xi) {
+  float x =  *(float*)&xi;
+  return x;
+}
+
+inline int float_as_int(float xf) {
+  int x =  *(int*)&xf;
+  return x;
+}
+
+Geom* g_num_fab(int a) {
+  printf("FAB NUM %f\n", int_as_float(a));
+  return g_num((T)int_as_float(a));
+}
 double g_num_val(Geom* g) {
   ensure(g->k == num_kind, "NOT NUM");
   return ((NumGeom*)g)->val;
+}
+
+int g_num_value(Geom* g) {
+  return float_as_int(g_num_val(g));
 }
 
 std::string g_string_val(Geom* g) {
@@ -44,27 +68,32 @@ char* g_string_c_str(Geom* g) {
   return (char*)g_string_val(g).c_str();
 }
 
-
-Geom* g_v2d(T x, T y) { return g_v2d(vec(x, y)); }
+Geom* g_v2d_fab(int x, int y) {
+  auto res = g_v2d(vec((T)int_as_float(x), (T)int_as_float(y)));
+  printf("FAB V2D %f %f -> %lx\n", int_as_float(x), int_as_float(y), res);
+  return res;
+}
 TV2 g_v2d_val(Geom* g) {
   ensure(g->k == v2d_kind, "NOT V2D");
   return ((V2dGeom*)g)->val;
 }
-T g_v2d_elt(Geom* g, int idx)  { return g_v2d_val(g)[idx]; }
-T g_v2d_x(Geom* g) { return g_v2d_val(g).x; }
-T g_v2d_y(Geom* g) { return g_v2d_val(g).y; }
+int g_v2d_elt(Geom* g, int idx)  { return float_as_int(g_v2d_val(g)[idx]); }
+int g_v2d_x(Geom* g) { return float_as_int(g_v2d_val(g).x); }
+int g_v2d_y(Geom* g) { return float_as_int(g_v2d_val(g).y); }
 
-Geom* g_v3d(T x, T y, T z) { return g_v3d(vec(x, y, z)); }
+Geom* g_v3d_fab(int x, int y, int z) {
+  return g_v3d(vec((T)int_as_float(x), (T)int_as_float(y), (T)int_as_float(z)));
+}
 TV3 g_v3d_val(Geom* g) {
   ensure(g->k == v3d_kind, "NOT V3D");
   return ((V3dGeom*)g)->val;
 }
-T g_v3d_elt(Geom* g, int idx)  { return g_v3d_val(g)[idx]; }
-T g_v3d_x(Geom* g) { return g_v3d_val(g).x; }
-T g_v3d_y(Geom* g) { return g_v3d_val(g).y; }
-T g_v3d_z(Geom* g) { return g_v3d_val(g).z; }
+int g_v3d_elt(Geom* g, int idx)  { return float_as_int(g_v3d_val(g)[idx]); }
+int g_v3d_x(Geom* g) { return float_as_int(g_v3d_val(g).x); }
+int g_v3d_y(Geom* g) { return float_as_int(g_v3d_val(g).y); }
+int g_v3d_z(Geom* g) { return float_as_int(g_v3d_val(g).z); }
 
-Geom* g_v3i(int x, int y, int z) { return g_v3i(vec(x, y, z)); }
+Geom* g_v3i_fab(int x, int y, int z) { return g_v3i(vec(x, y, z)); }
 IV3 g_v3i_val(Geom* g) {
   ensure(g->k == v3i_kind || g->k == v3d_kind, "NOT V3I");
   if (g->k == v3d_kind) {
@@ -78,9 +107,12 @@ int g_v3i_x(Geom* g) { return g_v3i_val(g).x; }
 int g_v3i_y(Geom* g) { return g_v3i_val(g).y; }
 int g_v3i_z(Geom* g) { return g_v3i_val(g).z; }
 
-Geom* g_mat(T i00, T i01, T i02, T i03, T i10, T i11, T i12, T i13,
-            T i20, T i21, T i22, T i23, T i30, T i31, T i32, T i33) {
-  Matrix<T,4> m(i00, i01, i02, i03, i10, i11, i12, i13, i20, i21, i22, i23, i30, i31, i32, i33);
+Geom* g_mat_fab(int i00, int i01, int i02, int i03, int i10, int i11, int i12, int i13,
+                int i20, int i21, int i22, int i23, int i30, int i31, int i32, int i33) {
+  Matrix<T,4> m(int_as_float(i00), int_as_float(i01), int_as_float(i02), int_as_float(i03),
+                int_as_float(i10), int_as_float(i11), int_as_float(i12), int_as_float(i13),
+                int_as_float(i20), int_as_float(i21), int_as_float(i22), int_as_float(i23),
+                int_as_float(i30), int_as_float(i31), int_as_float(i32), int_as_float(i33));
   return g_mat(m);
 }
 Matrix<T,4> g_mat_val(Geom* g) {
@@ -88,8 +120,8 @@ Matrix<T,4> g_mat_val(Geom* g) {
   return ((MatGeom*)g)->val;
 }
 
-T g_mat_elt(Geom* g, int i, int j) {
-  return g_mat_val(g).x[i][j];
+int g_mat_elt(Geom* g, int i, int j) {
+  return float_as_int(g_mat_val(g).x[i][j]);
 }
 
 Array<TV2> g_array_v2d_val(Geom* g) {
@@ -99,8 +131,12 @@ Array<TV2> g_array_v2d_val(Geom* g) {
 
 Geom* g_array_v2d_fab(Geom* args) {
   Array<TV2> v;
-  for (auto arg : g_args_val(args)) 
+  printf("FABBING ARRAY_V2D %lx\n", args); 
+  for (auto arg : g_args_val(args)) {
+    printf("ADDING ARG %lx\n", arg); 
     v.append(g_v2d_val(arg));
+  }
+  printf("FABBING ARRAY_V2D LEN %d\n", v.size()); 
   return g_array_v2d(v);
 }
 Geom* g_array_v2d_elt(Geom* g, int idx) { return g_v2d(g_array_v2d_val(g)[idx]); }
@@ -279,6 +315,18 @@ Geom* g_bbox(Geom* g) {
     error("BBOX UNDEFINED"); return NULL;
   }
 }
+Geom* g_dims(Geom* g) {
+  auto bb = g_bbox(g);
+  return g_sub(g_elt(bb, g_num(1.0)), g_elt(bb, g_num(0.0)));
+}
+Geom* g_center(Geom* g) {
+  auto bb = g_bbox(g);
+  return g_mul(g_num(0.5), g_add(g_elt(bb, g_num(0.0)), g_elt(bb, g_num(1.0))));
+}
+Geom* g_centering(Geom* g) {
+  auto c = g_center(g);
+  return g_mov(g_mul(g_num(-1), c), g);
+}
 Geom* g_load(Geom* s) { 
   // TODO: LOAD SVG
   return new MeshGeom(read_soup(g_string_val(s)));
@@ -286,8 +334,14 @@ Geom* g_load(Geom* s) {
 
 Geom* g_save(Geom* s, Geom* g) { 
   // TODO: LOAD SVG
-  auto mesh = g_mesh_val(g);
-  write_mesh(g_string_val(s), mesh.soup, mesh.points);
+  if (g->k == mesh_kind) {
+    auto mesh = g_mesh_val(g);
+    write_mesh(g_string_val(s), mesh.soup, mesh.points);
+  } else if (g->k == poly_kind) {
+    save_polygon(g_string_val(s), g_poly_val(g));
+  } else if (g->k == nested_v2d_kind) {
+    save_polyline(g_string_val(s), g_nested_v2d_val(g));
+  }
   return g;
 }
 
@@ -360,7 +414,7 @@ Geom* g_pretty_print(Geom* g) {
   return g;
 }
 
-Geom* g_num(double a) { return new NumGeom(a); }
+Geom* g_num(T a) { return new NumGeom(a); }
 Geom* g_string(std::string s) { return new StringGeom(s); }
 Geom* g_v2d(TV2 v) { return new V2dGeom(v); }
 Geom* g_v3d(TV3 v) { return new V3dGeom(v); }
@@ -400,8 +454,10 @@ Geom* g_array_v3i (std::vector<Geom*> args) {
 
 Geom* g_array_v2d (std::vector<Geom*> args) {
   Array< TV2 > points;
-  for (auto arg : args)
+  for (auto arg : args) {
+    printf("ADDING: ");  g_pretty_print(arg);
     points.append(g_v2d_val(arg));
+  }
   return new ArrayV2dGeom(points);
 }
 
@@ -459,17 +515,39 @@ Geom* g_text(Geom* a) {
 Geom* g_elt(Geom* g, Geom* i) {
   if (g->k == poly_kind)
     return new ArrayV2dGeom(nested_elt(g_poly_val(g), (int)g_num_val(i)));
+  else if (g->k == array_v2d_kind)
+    return g_v2d(g_array_v2d_val(g)[(int)g_num_val(i)]);
+  else if (g->k == array_v3d_kind)
+    return g_v3d(g_array_v3d_val(g)[(int)g_num_val(i)]);
+  else if (g->k == v3d_kind)
+    return g_num(g_v3d_val(g)[(int)g_num_val(i)]);
+  else if (g->k == v2d_kind)
+    return g_num(g_v2d_val(g)[(int)g_num_val(i)]);
   else {
     error("Bad arg for elt"); return NULL;
   }
 }
 Geom* g_add(Geom* a, Geom* b) {
-  // TODO: FILL IN FOR NUMS AND VECS
-  error("Bad args for add"); return NULL;
+  if (a->k == num_kind && b->k == num_kind)
+    return g_num(g_num_val(a) + g_num_val(b));
+  else if (a->k == v3d_kind && b->k == v3d_kind)
+    return g_v3d(g_v3d_val(a) + g_v3d_val(b));
+  else if (a->k == v2d_kind && b->k == v2d_kind)
+    return g_v2d(g_v2d_val(a) + g_v2d_val(b));
+  else {
+    error("Bad args for add"); return NULL;
+  }
 }
 Geom* g_sub(Geom* a, Geom* b) {
-  // TODO: FILL IN FOR NUMS AND VECS
-  error("Bad args for sub"); return NULL;
+  if (a->k == num_kind && b->k == num_kind)
+    return g_num(g_num_val(a) - g_num_val(b));
+  else if (a->k == v3d_kind && b->k == v3d_kind)
+    return g_v3d(g_v3d_val(a) - g_v3d_val(b));
+  else if (a->k == v2d_kind && b->k == v2d_kind)
+    return g_v2d(g_v2d_val(a) - g_v2d_val(b));
+  else {
+    error("Bad args for sub"); return NULL;
+  }
 }
 Geom* do_g_mul(Matrix<T,4> m, Geom* g, bool is_invert = false) { 
   if (g->k == mesh_kind)
@@ -489,11 +567,27 @@ Geom* do_g_mul(Matrix<T,4> m, Geom* g, bool is_invert = false) {
   }
 }
 Geom* g_mul(Geom* a, Geom* b) { 
-  // TODO: FILL IN FOR NUMS AND VECS
   if (a->k == mat_kind)
     return do_g_mul(g_mat_val(a), b);
+  else if (a->k == num_kind && b->k == num_kind)
+    return g_num(g_num_val(a) * g_num_val(b));
+  else if (a->k == num_kind && b->k == v3d_kind)
+    return g_v3d(g_num_val(a) * g_v3d_val(b));
+  else if (a->k == num_kind && b->k == v2d_kind)
+    return g_v2d(g_num_val(a) * g_v2d_val(b));
   else {
     error("Bad args for mul"); return NULL;
+  }
+}
+Geom* g_div(Geom* a, Geom* b) { 
+  if (a->k == num_kind && b->k == num_kind)
+    return g_num(g_num_val(a) * g_num_val(b));
+  else if (a->k == v3d_kind && b->k == num_kind)
+    return g_v3d(g_v3d_val(a) / g_num_val(b));
+  else if (a->k == v2d_kind && b->k == num_kind)
+    return g_v2d(g_v2d_val(a) * g_num_val(b));
+  else {
+    error("Bad args for div"); return NULL;
   }
 }
 Geom* g_mag(Geom* v, Geom* g) { 
@@ -620,7 +714,15 @@ Geom* g_cube(Geom* a) { auto r = g_num_val(a); return new MeshGeom(cube_mesh(vec
 Geom* g_cube_lo_hi(Geom* lo, Geom* hi) { return new MeshGeom(cube_mesh(g_v3d_val(lo), g_v3d_val(hi))); }
 Geom* g_cone(Geom* a, Geom* p) { return new MeshGeom(cone_mesh(g_num_val(a), g_poly_val(p))); }
 Geom* g_revolve(Geom* p) { return new MeshGeom(revolve(16, g_poly_val(p))); }
-Geom* g_hull(Geom* m) { return new MeshGeom(quick_hull(g_mesh_val(m))); }
+Geom* g_hull(Geom* g) {
+  if (g->k == mesh_kind)
+    return new MeshGeom(quick_hull_mesh(g_mesh_val(g)));
+  else if (g->k == poly_kind)
+    return new PolyGeom(quick_hull_poly(g_poly_val(g)));
+  else {
+    error("Bad HULL type"); return NULL;
+  }
+}
 // Geom* g_shear_x_z(Geom* z0, Geom* z1, Geom* dx0, Geom* dx1, Geom* m) {
 //   return new MeshGeom(shear_x_z(g_num_val(z0), g_num_val(z1), g_num_val(dx0), g_num_val(dx1), g_mesh(m))); }
 Geom* g_taper(Geom* l, Geom* r0, Geom* r1, Geom* p) {
