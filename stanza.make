@@ -1,9 +1,9 @@
 COMMON_LIBS = -lgeode -lm
-ifeq ($(OS2), Darwin)
+OS := $(strip $(shell uname))
+ifeq ($(OS), Darwin)
   LIBS = $(COMMON_LIBS)  -framework GLUT -framework OpenGL
 else
-  OS := $(strip $(shell uname -o))
-  ifeq ($(OS), GNU/Linux)
+  ifeq ($(OS), Linux)
     LIBS = -L/usr/local/lib $(COMMON_LIBS) -lglut -lGL -lGLU -lm 
   else
     $(error Unknown OS)
