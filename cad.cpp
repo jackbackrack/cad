@@ -623,8 +623,12 @@ Mesh mesh_from(int start, Mesh mesh) {
 Nested<TV2> slice(T z, Mesh mesh) {
   T t = 1e8; // TODO: USE INF
   auto smesh = const_mesh(cube_mesh(vec(-t, -t, -t), vec( t,  t,  z)));
-  // print_mesh(smesh);
+  // printf("-- SLICE %f MESH --\n", z);
+  // pretty_print_mesh(smesh);
+  // printf("-- ABOUT TO SLICE %f --\n", z);
   auto res = intersection(smesh, mesh, false);
+  // printf("-- SLICE %f INTERSECTION MESH --\n", z);
+  // pretty_print_mesh(res);
   int start = smesh.points.size() + mesh.points.size();
 
   // printf("---->>>>\n");
@@ -666,7 +670,7 @@ Nested<TV2> slice(T z, Mesh mesh) {
     pres.append(contour);
   }
   pres.freeze();
-  return pres;
+  return simplify_poly(pres);
 }
 
 Mesh difference(Mesh mesh0, Mesh mesh1, bool is_simplify) {

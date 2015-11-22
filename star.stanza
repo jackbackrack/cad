@@ -14,9 +14,31 @@ defn star (n:Int, rmin:Float, rmax:Float) -> Polygon :
       yield(vec(r * cos(a), r * sin(a)))
   polygon(points)
  
+defn dice (mesh:Mesh, n:Int) :
+  val bb = bbox(mesh)
+  val lo = z(min(bb))
+  val dz = z(max(bb)) - lo
+  val sh = dz / to-float(n)
+  var res = none3()
+  println-all(["DZ " dz " LO " lo " SH " sh])
+  for i in 0 to n do :
+    val off = lo + ((0.5 + to-float(i)) * sh)
+    println-all(["I " i " OFF " off])
+    val sl  = slice(num(off), mesh)
+    println-all(["SLICED " i])
+    save(str(string-join(["slice" i ".svg"])), sl)
+    val we  = extrude(num(sh * 1.001), sl)
+    println-all(["EXTRUDED " i])
+    save(str(string-join(["slice" i ".stl"])), we)
+    res = res | zmov(num(off), we)
+    println-all(["UNION " i])
+    save(str(string-join(["slices" i ".stl"])), res)
+  res
+
 println(num(1.0))
 println(vec(1.0, 2.0))
 println(arrayV2d([vec(-1.0,-1.0)]))
+save(str("slices.stl"), dice(load(str("fat-bear.stl")), 13))
 ;; pprint(arrayV2d([vec(-1.0,-1.0),vec(0.0,1.0),vec(1.0,-1.0)]))
 ;; pprint(arrayV3d([vec(-1.0,-1.0,-1.0),vec(0.0,1.0,0.0),vec(1.0,-1.0,1.0)]))
 ;; pprint(arrayV3i([vec(-1,-1,-1),vec(0,1,1),vec(1,-1,0)]))

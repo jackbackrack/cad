@@ -475,13 +475,17 @@ void IsoSurface::FreeMemory() {
 
 Mesh offset_mesh(T off, Mesh mesh) {
   IsoSurface surface;
+  int n = 10;
   auto sbox = bounding_box(mesh.points);
-  // printf("SBOX [%g,%g,%g] [%g,%g,%g]\n", sbox.min.x, sbox.min.y, sbox.min.z, sbox.max.x, sbox.max.y, sbox.max.z);
-  auto delta = vec(off, off, off) + vec(1.0, 1.0, 1.0);
+  auto sdims = sbox.max - sbox.min;
+  auto i_cell_size = min(sdims.x, min(sdims.y, sdims.z)) / n;
+  printf("SBOX [%g,%g,%g] [%g,%g,%g]\n", sbox.min.x, sbox.min.y, sbox.min.z, sbox.max.x, sbox.max.y, sbox.max.z);
+  auto delta = (off + i_cell_size + 1.0) * vec(1.0, 1.0, 1.0);
   Box<TV3> box(sbox.min - delta, sbox.max + delta);
-  // printf("BOX [%g,%g,%g] [%g,%g,%g]\n", box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z);
+  printf("BOX [%g,%g,%g] [%g,%g,%g]\n", box.min.x, box.min.y, box.min.z, box.max.x, box.max.y, box.max.z);
   auto dims = box.max - box.min;
+  auto cell_size = min(dims.x, min(dims.y, dims.z)) / n;
   // TODO: AUTO SET CELL_SIZE
-  auto cell_size = min(dims.x, min(dims.y, dims.z)) / 40.0;
   return surface.IsoApproximate(box.min, box.max, cell_size, mesh, off);
 }
+

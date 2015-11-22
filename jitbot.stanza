@@ -215,6 +215,7 @@ public defn polygon (contours:Streamable<Streamable<V2d>>) :
 public defn polygon (contour:Streamable<V2d>) : polygon([contour])
 defmethod print (o:OutputStream, g:Polygon) :
   print-elts(o, g, "Polygon", len, elt)
+public defn none2 () -> Polygon : Polygon(($do-prim ls g-none2))
 
 public definterface Polyline <: Geom3 
 public defmulti elt (v:Polyline, i:Int) -> ArrayV3d
@@ -245,6 +246,8 @@ public defn mesh (points:Streamable<V3d>, faces:Streamable<V3i>) :
   Mesh(($do-prim ls g-mesh-fab pp pf))
 defmethod print (o:OutputStream, g:Mesh) :
   print-all(o ["Mesh(" points(g) "," faces(g) ")"])
+
+public defn none3 () -> Mesh : Mesh(($do-prim ls g-none))
 
 public defn rprint (a:Polygon) -> Polygon :
   val p = ptr(a)
@@ -322,6 +325,10 @@ public defn offset (a:Num, b:Polygon) -> Polygon :
   val pa = ptr(a)
   val pb = ptr(b)
   Polygon(($do-prim ls g-offset pa pb))
+public defn save (s:Str, m:Polygon) -> Polygon :
+  val ps = ptr(s)
+  val pm = ptr(m)
+  Polygon(($do-prim ls g-save ps pm))
 
 public defn rprint (a:Polyline) -> Polyline :
   val pa = ptr(a)
@@ -415,6 +422,9 @@ public defn rprint (a:Mesh) -> Mesh :
 public defn pprint (a:Mesh) -> Mesh :
   val pa = ptr(a)
   Mesh(($do-prim ls g-pretty-print pa))
+public defn simplify (g:Mesh) -> Mesh :
+  val pg = ptr(g)
+  Mesh(($do-prim ls g-simplify pg))
 public defn bbox (g:Mesh) -> BBox3 :
   val pg = ptr(g)
   BBox3(($do-prim ls g-bbox pg))
@@ -512,6 +522,10 @@ public defn sphere (r:Num) -> Mesh :
 public defn cube (r:Num) -> Mesh :
   val pr = ptr(r)
   Mesh(($do-prim ls g-cube pr))
+public defn slice (z:Num,g:Mesh) -> Polygon :
+  val pz = ptr(z)
+  val pg = ptr(g)
+  Polygon(($do-prim ls g-slice pz pg))
 public defn load (s:Str) -> Mesh :
   val ps = ptr(s)
   Mesh(($do-prim ls g-load ps))
