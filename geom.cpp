@@ -610,19 +610,32 @@ Geom* g_ymov(Geom* a, Geom* g) {
 Geom* g_zmov(Geom* a, Geom* g) {
   return do_g_mul(translation_matrix(vec(0.0, 0.0, g_num_val(a))), g);
 }
-Geom* g_rot(Geom* from, Geom* to, Geom* g) {
+inline T degrees_to_radians (T d) {
+  return d * M_PI / 180.0;
+}
+Geom* g_rot(Geom* v, Geom* g) {
+  printf("ROT: ");
+  g_pretty_print(v);
+  TV3 rv = g_v3d_val(v);
+  TV3 av = vec(degrees_to_radians(rv.x), degrees_to_radians(rv.y), degrees_to_radians(rv.z));
+  return do_g_mul(rotation_matrix(av), g);
+}
+Geom* g_rot_from_to(Geom* from, Geom* to, Geom* g) {
   return do_g_mul(rotation_matrix(g_v3d_val(from), g_v3d_val(to)), g);
 }
-Geom* g_xrot(Geom* a, Geom* g) {
-  T c=cos(g_num_val(a)),s=sin(g_num_val(a));
+Geom* g_xrot(Geom* d, Geom* g) {
+  T a = degrees_to_radians(g_num_val(d));
+  T c=cos(a),s=sin(a);
   return do_g_mul(Matrix<T,4>(1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1), g);
 }
-Geom* g_yrot(Geom* a, Geom* g) {
-  T c=cos(g_num_val(a)),s=sin(g_num_val(a));
+Geom* g_yrot(Geom* d, Geom* g) {
+  T a = degrees_to_radians(g_num_val(d));
+  T c=cos(a),s=sin(a);
   return do_g_mul(Matrix<T,4>(c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1), g);
 }
-Geom* g_zrot(Geom* a, Geom* g) {
-  T c=cos(g_num_val(a)),s=sin(g_num_val(a));
+Geom* g_zrot(Geom* d, Geom* g) {
+  T a = degrees_to_radians(g_num_val(d));
+  T c=cos(a),s=sin(a);
   return do_g_mul(Matrix<T,4>(c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1), g);
 }
 Geom* g_reflect_x(Geom* g) {

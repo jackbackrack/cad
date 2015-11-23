@@ -46,6 +46,7 @@ public:
 extern Mesh fab_mesh (Array<IV3> faces, Array<TV3> points);
 
 extern Matrix<T,4> to_matrix44(Matrix<T,3> M);
+extern Matrix<T,4> rotation_matrix(TV3 angles);
 extern Matrix<T,4> rotation_matrix(TV3 from, TV3 to);
 extern Matrix<T,4> rotation_matrix(TV2 from, TV2 to);
 extern Matrix<T,4> scale_matrix(TV3 v);

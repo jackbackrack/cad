@@ -165,6 +165,9 @@ externfn g_ymov : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-ymov (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_ymov, a.value, g.value))
 externfn g_zmov : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-zmov (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_zmov, a.value, g.value))
+externfn g_rot_from_to : (ptr<?>, ptr<?>, ptr<?>) -> ptr<?>
+defn g-rot-from-to (from:ref<Ptr>, to:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> :
+  return ref<Ptr>(callc(g_rot_from_to, from.value, to.value, g.value))
 externfn g_rot : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-rot (v:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_rot, v.value, g.value))
 externfn g_xrot : (ptr<?>, ptr<?>) -> ptr<?>
@@ -203,6 +206,8 @@ externfn g_not : (ptr<?>) -> ptr<?>
 defn g-not (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_not, g.value))
 externfn g_offset : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-offset (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_offset, a.value, g.value))
+externfn g_thicken : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-thicken (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_thicken, a.value, g.value))
 externfn g_hollow : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-hollow (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_hollow, a.value, g.value))
 externfn g_simplify : (ptr<?>) -> ptr<?>
@@ -211,8 +216,6 @@ externfn g_slice : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-slice (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_slice, a.value, g.value))
 externfn g_extrude : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-extrude (a:ref<Ptr>, p:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_extrude, a.value, p.value))
-externfn g_thicken : (ptr<?>, ptr<?>) -> ptr<?>
-defn g-thicken (a:ref<Ptr>, g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_thicken, a.value, g.value))
 externfn g_sphere : (ptr<?>) -> ptr<?>
 defn g-sphere (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_sphere, g.value))
 externfn g_cube : (ptr<?>) -> ptr<?>

@@ -48,6 +48,10 @@ typedef Vector<int,2> IV2;
 Matrix<T,4> to_matrix44(Matrix<T,3> M) {
   return Matrix<T,4>(M.x[0][0],M.x[1][0],M.x[2][0],0,M.x[0][1],M.x[1][1],M.x[2][1],0,M.x[0][2],M.x[1][2],M.x[2][2],0,0,0,0,1);
 }
+Matrix<T,4> rotation_matrix(TV angles) {
+  auto m = Rotation<Vector<T,3> >::from_euler_angles(angles).matrix();
+  return to_matrix44(m);
+}
 Matrix<T,4> rotation_matrix(TV from, TV to) {
   auto m = Rotation<Vector<T,3> >::from_rotated_vector(from, to).matrix();
   return to_matrix44(m);
@@ -152,6 +156,7 @@ Mesh gc_mesh(Mesh mesh) {
   return fab_mesh(new_faces, new_points);
 }
 
+/*
 Mesh quick_simplify_mesh(Mesh mesh) {
   printf("SIMPLIFYING\n");
   Array<IV3> faces;
@@ -205,6 +210,54 @@ Mesh quick_simplify_mesh(Mesh mesh) {
          faces.size(), new_faces.size(), faces.size() - new_faces.size() );
   return gc_mesh(fab_mesh(new_faces, points));
 }
+*/
+
+Mesh quick_simplify_mesh(Mesh mesh) {
+  // printf("STARTING SIMPLIFICATION\n");
+  // report_simplify_mesh(mesh);
+  Array<TV3> pos(mesh.points);
+  Field<TV3,VertexId> field(pos.copy());
+  auto topo = new_<MutableTriangleTopology>();
+  topo->add_vertices(mesh.points.size());
+  for (auto face : mesh.soup->elements)
+    topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
+  bool is_changed = false;
+  do {
+    is_changed = false;
+    for (auto e : topo->halfedges()) {
+      auto src = topo->src(e);
+      auto dst = topo->dst(e);
+      if (pos[(int)src] == pos[(int)dst]) {
+        if (topo->is_collapse_safe(e)) {
+          // printf("COLLAPSING %d\n", (int)e);
+          topo->collapse(e);
+          is_changed = true;
+          break;
+        }
+      }
+    }
+  } while (is_changed == true);
+  auto updates = topo->collect_garbage();
+  // printf("AFTER GC %d UPDATES %d\n", field.size(), updates.x.size());
+  int i = 0, tot = 0;
+  for (auto update : updates.x) {
+    if (update >= 0) tot += 1;
+    // printf("  %d -> %d\n", i, update);
+    i += 1;
+  }
+  Array<TV3> new_points(tot);
+  i = 0;
+  for (auto update : updates.x) {
+    if (update >= 0) new_points[update] = pos[i];
+    i += 1;
+  }
+  auto new_soup = topo->face_soup().x;
+  // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
+  //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
+  return gc_mesh(Mesh(const_soup(new_soup), new_points));
+  // auto new_soup = topo->face_soup().x;
+  // return gc_mesh(Mesh(const_soup(new_soup), pos));
+}
 
 Mesh real_simplify_mesh(Mesh mesh) {
   // printf("STARTING SIMPLIFICATION\n");
@@ -241,7 +294,7 @@ Mesh real_simplify_mesh(Mesh mesh) {
 }
 
 Mesh simplify_mesh(Mesh mesh) {
-  if (true)
+  if (false)
     return real_simplify_mesh(mesh);
   else
     return quick_simplify_mesh(mesh);
