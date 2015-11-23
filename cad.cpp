@@ -212,7 +212,7 @@ Mesh quick_simplify_mesh(Mesh mesh) {
 }
 */
 
-Mesh quick_simplify_mesh(Mesh mesh) {
+Mesh cleanup_mesh(Mesh mesh) {
   // printf("STARTING SIMPLIFICATION\n");
   // report_simplify_mesh(mesh);
   Array<TV3> pos(mesh.points);
@@ -259,7 +259,7 @@ Mesh quick_simplify_mesh(Mesh mesh) {
   // return gc_mesh(Mesh(const_soup(new_soup), pos));
 }
 
-Mesh real_simplify_mesh(Mesh mesh) {
+Mesh simplify_mesh(Mesh mesh) {
   // printf("STARTING SIMPLIFICATION\n");
   // report_simplify_mesh(mesh);
   Array<TV3> pos(mesh.points);
@@ -291,13 +291,6 @@ Mesh real_simplify_mesh(Mesh mesh) {
   // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
   //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
   return gc_mesh(Mesh(const_soup(new_soup), new_points));
-}
-
-Mesh simplify_mesh(Mesh mesh) {
-  if (false)
-    return real_simplify_mesh(mesh);
-  else
-    return quick_simplify_mesh(mesh);
 }
 
 // invert triangle soup so normals point inwards
@@ -340,42 +333,42 @@ Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour, bool is_invert) {
   return is_invert ? invert_contour(res) : res;
 }
 
-Array<TV2> simplify_contour(RawArray<TV2> contour) {
+Array<TV2> cleanup_contour(RawArray<TV2> contour) {
   // TODO: LIMITS
   return polygon_simplify(contour, 179.9, 0.0001);
 }
 
-Nested<TV2> simplify_poly(Nested<TV2> poly) {
+Nested<TV2> cleanup_poly(Nested<TV2> poly) {
   Nested<TV2,false> res;
   for (auto contour : poly) 
-    res.append(simplify_contour(contour));
+    res.append(cleanup_contour(contour));
   res.freeze();
   return res;
 }
 
-Nested<TV2> maybe_simplify_poly(Nested<TV2> poly) {
+Nested<TV2> maybe_cleanup_poly(Nested<TV2> poly) {
   if (true)
-    return simplify_poly(poly);
+    return cleanup_poly(poly);
   else
     return poly;
 }
 Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1) {
   auto res = polygon_union(c0, c1);
   // printf("UNION POLY\n");
-  return maybe_simplify_poly(res);
+  return maybe_cleanup_poly(res);
 }
 Nested<TV2> union_all(Nested<TV2> c0) {
   auto res = polygon_union(c0);
   // printf("UNION POLY\n");
-  return maybe_simplify_poly(res);
+  return maybe_cleanup_poly(res);
 }
 
 Nested<TV2> intersection(Nested<TV2> c0, Nested<TV2> c1) {
-  return maybe_simplify_poly(polygon_intersection(c0, c1));
+  return maybe_cleanup_poly(polygon_intersection(c0, c1));
 }
 
 Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1) {
-  return maybe_simplify_poly(polygon_union(c0, invert_poly(c1)));
+  return maybe_cleanup_poly(polygon_union(c0, invert_poly(c1)));
 }
 
 void save_svg_header(std::fstream &fs) {
@@ -408,16 +401,16 @@ void save_polyline(std::string filename, Nested<TV2> polyline) {
 }
 
 
-Mesh maybe_simplify_mesh (Mesh mesh, bool is_simplify) {
-  // report_simplify_mesh(mesh);
-  if (is_simplify)
-    return simplify_mesh(mesh);
+Mesh maybe_cleanup_mesh (Mesh mesh, bool is_cleanup) {
+  // report_cleanup_mesh(mesh);
+  if (is_cleanup)
+    return cleanup_mesh(mesh);
   else
     return mesh;
 }
-Mesh split_mesh (Mesh mesh, int depth, bool is_simplify) {
+Mesh split_mesh (Mesh mesh, int depth, bool is_cleanup) {
   auto split = split_soup(mesh.soup, mesh.points, depth);
-  return maybe_simplify_mesh(Mesh(split.x, split.y), is_simplify);
+  return maybe_cleanup_mesh(Mesh(split.x, split.y), is_cleanup);
 }
 
 Nested<TV2> offset(T a, Nested<TV2> c) {
@@ -426,10 +419,10 @@ Nested<TV2> offset(T a, Nested<TV2> c) {
   return c;
 }
 
-Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_simplify) {
+Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_cleanup) {
   auto merge = concat_meshes(mesh0, mesh1);
   // printf("--- START UNIONING ---\n");
-  auto res   = split_mesh(merge, 0, is_simplify);
+  auto res   = split_mesh(merge, 0, is_cleanup);
   // printf("--- DONE  UNIONING ---\n");
   return res;
 }
@@ -645,9 +638,9 @@ std::string matrix_to_str(Matrix<T,4> M) {
   return ss.str();
 }
 
-Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify) {
+Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_cleanup) {
   auto merge = concat_meshes(mesh0, mesh1);
-  return split_mesh(merge, 1, is_simplify);
+  return split_mesh(merge, 1, is_cleanup);
 }
 
 Mesh mesh_from(int start, Mesh mesh) {
@@ -723,12 +716,12 @@ Nested<TV2> slice(T z, Mesh mesh) {
     pres.append(contour);
   }
   pres.freeze();
-  return simplify_poly(pres);
+  return cleanup_poly(pres);
 }
 
-Mesh difference(Mesh mesh0, Mesh mesh1, bool is_simplify) {
+Mesh difference(Mesh mesh0, Mesh mesh1, bool is_cleanup) {
   auto merge = concat_meshes(mesh0, invert_mesh(mesh1));
-  return split_mesh(merge, 0, is_simplify);
+  return split_mesh(merge, 0, is_cleanup);
 }
 
 template<class ET>

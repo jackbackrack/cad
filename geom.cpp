@@ -705,7 +705,7 @@ Geom* g_offset(Geom* a, Geom* g) {
   }
 }
 Geom* g_hollow(Geom* a, Geom* m) { return g_difference(m, g_offset(g_num(-g_num_val(a)), m)); }
-Geom* g_simplify(Geom* g) { return new MeshGeom(real_simplify_mesh(g_mesh_val(g))); }
+Geom* g_simplify(Geom* g) { return new MeshGeom(simplify_mesh(g_mesh_val(g))); }
 Geom* g_slice(Geom* a, Geom* g) { return new PolyGeom(slice(g_num_val(a), g_mesh_val(g))); }
 Geom* g_extrude(Geom* a, Geom* p) { return new MeshGeom(extrude(g_num_val(a), g_poly_val(p))); }
 Geom* g_thicken(Geom* a, Geom* l) {

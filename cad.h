@@ -67,15 +67,15 @@ extern Ref<const TriangleSoup> const_soup(Ref<TriangleSoup> val);
 extern Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV3>> val);
 
 extern Mesh simplify_mesh(Mesh mesh);
-extern Mesh real_simplify_mesh(Mesh mesh);
+extern Mesh cleanup_mesh(Mesh mesh);
 
 extern Mesh invert_mesh(Mesh mesh);
 
 extern Array<TV2> invert_contour(Array<TV2> contour);
 extern Nested<TV2> invert_poly(Nested<TV2> poly);
 
-extern Array<TV2> simplify_contour(RawArray<TV2> contour);
-extern Nested<TV2> simplify_poly(Nested<TV2> poly);
+extern Array<TV2> cleanup_contour(RawArray<TV2> contour);
+extern Nested<TV2> cleanup_poly(Nested<TV2> poly);
 
 extern Nested<TV2> union_add(Nested<TV2> c0, Nested<TV2> c1);
 extern Nested<TV2> union_all(Nested<TV2> cs);
@@ -84,7 +84,7 @@ extern Nested<TV2> difference(Nested<TV2> c0, Nested<TV2> c1);
 
 extern Nested<TV2> offset(T a, Nested<TV2> c);
 
-extern Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
+extern Mesh union_add(Mesh mesh0, Mesh mesh1, bool is_cleanup = true);
 
 extern void pretty_print_num(T pt);
 extern void pretty_print_v2d(TV2 pt);
@@ -116,13 +116,13 @@ extern std::string matrix_to_str(Matrix<T,4> M);
 extern void save_polygon(std::string filename, Nested<TV2> polygon);
 extern void save_polyline(std::string filename, Nested<TV2> polyline);
 
-extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
+extern Mesh intersection(Mesh mesh0, Mesh mesh1, bool is_cleanup = true);
 
 extern Mesh mesh_from(int start, Mesh soup);
 
 extern Nested<TV2> slice(T z, Mesh soup);
 
-extern Mesh difference(Mesh mesh0, Mesh mesh1, bool is_simplify = true);
+extern Mesh difference(Mesh mesh0, Mesh mesh1, bool is_cleanup = true);
 
 template<class ET> Nested<ET> array_to_nested(Array<ET> contour);
 
