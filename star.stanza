@@ -80,9 +80,44 @@ defn seat-polygons () :
   val side = thicken(num(1.5), polyline2([[vec(-5.0,-10.0), vec(-5.0,10.0)],[vec(-5.0,0.0),vec(5.0,0.0),vec(5.0,-10.0)]]))
   [seat, back, side, side]
 
+defn edge-connector (len:Float, inner:Float, outer:Float, p0:V3d, p1:V3d) -> Mesh :
+  val shape = extrude(num(len), square(num(outer)))
+  val hole  = extrude(num(len + 0.1), square(num(inner)))
+  val v     = p1 - p0
+  val nv    = normalize(v)
+  val end   = num(len) * nv
+  val conn  = mov(num(0.5) * end, rot(vec(0.0,0.0,1.0), nv, shape - hole))
+  conn
+
+defn fat-vertex (len:Float, inner:Float, outer:Float, base:V3d, nbrs:Streamable<V3d>) -> Mesh :
+  reduce(bit-or, none3(), stream(edge-connector{len, inner, outer, base, _}, nbrs))
+
+defn all-fat-vertices (len:Float, inner:Float, outer:Float, pts:List<V3d>) :
+  generate<Mesh> :
+    for i in 0 to length(pts) do :
+      val pt = pts[i]
+      val nbrs = generate<V3d> :
+        for j in 0 to length(pts) do :
+          if j != i :
+            yield(pts[j])
+      yield(mov(pt, fat-vertex(len, inner, outer, pt, nbrs)))
+
+
+
+;;  val points = points(mesh)
+;;  val faces  = edges(mesh)
+  
+
 println(num(1.0))
 println(vec(1.0, 2.0))
 println(arrayV2d([vec(-1.0,-1.0)]))
+save(str("c1.stl"), edge-connector(4.0, 0.1, 0.5, vec(0.0,0.0,0.0), vec(8.0, 0.0, 0.0)))
+save(str("c2.stl"), edge-connector(4.0, 0.1, 0.5, vec(4.0,0.0,0.0), vec(12.0, 0.0, 0.0)))
+save(str("c3.stl"), fat-vertex(2.0, 0.1, 0.5, vec(-4.0,-4.0,0.0), [vec(0.0, 0.0, 4.0), vec(4.0, -4.0, 0.0), vec(0.0, 4.0, 0.0)]))
+val tri-points = to-list([vec(-4.0,-4.0,0.0),vec(0.0, 0.0, 4.0), vec(4.0, -4.0, 0.0), vec(0.0, 4.0, 0.0)])
+val verts = all-fat-vertices(2.0, 0.1, 0.5, tri-points)
+;; save(str("verts.stl"), reduce(bit-or, none3(), verts))
+
 ;; save(str("chair.stl"), assemble-chair(seat-polygons(), seat-transformations(1.0), 1.5))
 ;; save(str("slices.stl"), dice(cube(num(5.0)), 13))
 ;; save(str("slices.stl"), dice(taper(num(10.0),num(5.0),num(1.0),circle(num(1.0))), 13))

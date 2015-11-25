@@ -1,4 +1,5 @@
 #include "cad.h"
+#include <geode/geometry/Triangle3d.h>
 #include <geode/geometry/polygon.h>
 #include <geode/geometry/offset_mesh.h>
 #include <geode/exact/mesh_csg.h>
@@ -102,22 +103,32 @@ Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV3>> val) {
   return Mesh(const_soup(val.x), val.y);
 }
 
-Mesh report_simplify_mesh(Mesh mesh) {
-  Array<IV3> new_faces;
-  auto points = mesh.points;
+void report_simplify_mesh(Mesh mesh) {
+  printf("START REPORTING MESH ISSUES\n");
+  int fi = 0;
   for (auto face : mesh.soup->elements) {
-    if (points[face.x] == points[face.y])
-      printf("zero edge %d -> %d\n", face.x, face.y);
-    else if (points[face.y] == points[face.z])
-      printf("zero edge %d -> %d\n", face.y, face.z);
-    else if (points[face.x] == points[face.z])
-      printf("zero edge %d -> %d\n", face.x, face.z);
-    else
-      new_faces.append(face);
+    Triangle<TV3> tri(mesh.points[face[0]],
+                      mesh.points[face[1]],
+                      mesh.points[face[2]]);
+    if (tri.area() == 0.0) {
+      printf("ZERO AREA TRI %d: ", fi);
+      printf("[%f,%f,%f] [%f,%f,%f] [%f,%f,%f]: ",
+             tri.x0.x, tri.x0.y, tri.x0.z, tri.x1.x, tri.x1.y, tri.x1.z, tri.x2.x, tri.x2.y, tri.x2.z);
+      if (tri.x0 != tri.x1 && tri.x0 != tri.x2 && tri.x1 != tri.x2) 
+        printf("CUP\n");
+      else
+        printf("SPLINTER\n");
+    }
+    fi += 1;
   }
-  printf("%d FACES NOW %d REMOVED %d FACES\n",
-         mesh.soup->elements.size(), new_faces.size(), mesh.soup->elements.size() - new_faces.size() );
-  return fab_mesh(new_faces, points);
+  Hashtable<TV3,int> same_vertices;
+  for (int i = 0; i < mesh.points.size(); i++) {
+    auto p = mesh.points[i];
+    auto j = same_vertices.get_or_insert(p, i);
+    if (i != j)
+      printf("REDUNDANT POINT [%f,%f,%f] %d -> %d \n", p.x, p.y, p.z, i, j);
+  }
+  printf("END REPORTING MESH ISSUES\n");
 }
 
 Mesh dither_mesh(Mesh mesh, double delta) {
@@ -154,6 +165,27 @@ Mesh gc_mesh(Mesh mesh) {
   // printf("%d POINTS NOW %d REMOVED %d POINTS DELTA %d\n",
   //        mesh.points.size(), new_points.size(), mesh.points.size() - new_points.size(), delta);
   return fab_mesh(new_faces, new_points);
+}
+
+Mesh unify_mesh_vertices (Mesh mesh) {
+  // printf("GCING\n");
+  printf("START COMPRESS VERTICES\n");
+  // pretty_print_mesh(mesh);
+  // printf("---\n");
+  Hashtable<TV3,int> same_vertices;
+  Hashtable<int,int> vertex_map;
+  for (int i = 0; i < mesh.points.size(); i++) {
+    auto p = mesh.points[i];
+    auto j = same_vertices.get_or_insert(p, i);
+    if (i != j)
+      printf("MAPPING [%f,%f,%f] %d -> %d [%f,%f,%f] \n", p.x, p.y, p.z, i, j, mesh.points[j].x, mesh.points[j].y, mesh.points[j].z);
+    vertex_map[i] = j;
+  }
+  Array<IV3> new_faces;
+  for (auto face : mesh.soup->elements) 
+    new_faces.append(vec(vertex_map[face.x], vertex_map[face.y], vertex_map[face.z]));
+  printf("END COMPRESS VERTICES\n");
+  return fab_mesh(new_faces, mesh.points);
 }
 
 /*
@@ -212,49 +244,146 @@ Mesh quick_simplify_mesh(Mesh mesh) {
 }
 */
 
-Mesh cleanup_mesh(Mesh mesh) {
-  // printf("STARTING SIMPLIFICATION\n");
+int max_segment (Segment<TV3>& s0, Segment<TV3>& s1, Segment<TV3>& s2) {
+  // printf("S0 %f S1 %f S2 %f\n", s0.length(), s1.length(), s2.length());
+  if (s0.length() > s1.length() && s0.length() > s2.length()) {
+    return 0;
+  } else if (s1.length() > s0.length() && s1.length() > s2.length()) {
+    return 1;
+  } else if (s2.length() > s0.length() && s2.length() > s1.length()) {
+    return 2;
+  } else  {
+    error("COULD NOT FIND MAX SEGMENT");
+    return -1;
+  }
+}
+
+VertexId common_vertex (VertexId e0v0, VertexId e0v1, VertexId e1v0, VertexId e1v1) {
+  if (e0v0 == e1v0 || e0v0 == e1v1) return e0v0;
+  else if (e0v1 == e1v0 || e0v1 == e1v1) return e0v1;
+  else {
+    error("COULD NOT FIND COMMON VERTEX"); return (VertexId)0;
+  }
+}
+
+Mesh quick_cleanup_mesh(Mesh mesh) {
+  printf("--- START CLEANUP\n");
+  pretty_print_mesh(mesh);
+  // write_mesh("tst1.stl", mesh.soup, mesh.points);
+  // printf("---\n");
   // report_simplify_mesh(mesh);
-  Array<TV3> pos(mesh.points);
-  Field<TV3,VertexId> field(pos.copy());
-  auto topo = new_<MutableTriangleTopology>();
-  topo->add_vertices(mesh.points.size());
-  for (auto face : mesh.soup->elements)
-    topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
+  // Array<TV3> pos(mesh.points.copy());
+  auto topo = new_<MutableTriangleTopology>(mesh.soup);
+  printf("ADDING FIELD\n");
+  FieldId<TV3,VertexId> pos_id = topo->add_field(Field<TV,VertexId>(mesh.points.copy()), vertex_position_id);
+  auto &field = topo->field(pos_id);
+
+  std::vector<FaceId> split_faces;
   bool is_changed = false;
+  printf("CLEANUP ZERO GEOMETRY\n");
   do {
+     do {
+      is_changed = false;
+      for (auto face : topo->faces()) {
+        auto tri = topo->triangle(field, face);
+        if (tri.area() == 0.0 && tri.x0 != tri.x1 && tri.x0 != tri.x2 && tri.x1 != tri.x2) {
+          auto e0  = topo->halfedge(face, 0);
+          auto e1  = topo->halfedge(face, 1);
+          auto e2  = topo->halfedge(face, 2);
+          RawField<TV3,VertexId> rawfield(field);
+          auto s0  = topo->segment(rawfield, e0);
+          auto s1  = topo->segment(rawfield, e1);
+          auto s2  = topo->segment(rawfield, e2);
+          // auto tri = topo->triangle(field, face);
+          // printf("ZERO AREA TRI %d [%f,%f,%f] [%f,%f,%f] [%f,%f,%f]\n",
+          //        (int)face, tri.x0.x, tri.x0.y, tri.x0.z, tri.x1.x, tri.x1.y, tri.x1.z, tri.x2.x, tri.x2.y, tri.x2.z);
+          // printf("  E0 %d S0 [%f,%f,%f] [%f,%f,%f]\n", (int)e0, s0.x0.x, s0.x0.y, s0.x0.z, s0.x1.x, s0.x1.y, s0.x1.z);
+          // printf("  E1 %d S1 [%f,%f,%f] [%f,%f,%f]\n", (int)e1, s1.x0.x, s1.x0.y, s1.x0.z, s1.x1.x, s1.x1.y, s1.x1.z);
+          // printf("  E2 %d S2 [%f,%f,%f] [%f,%f,%f]\n", (int)e2, s2.x0.x, s2.x0.y, s2.x0.z, s2.x1.x, s2.x1.y, s2.x1.z);
+          int msi  = max_segment(s0, s1, s2);
+          int o1i  = (msi + 1)%3;
+          int o2i  = (msi + 2)%3;
+          auto oe1 = topo->halfedge(face,o1i);
+          auto oe2 = topo->halfedge(face,o2i);
+          auto cvi = common_vertex(topo->src(oe1), topo->dst(oe1), topo->src(oe2), topo->dst(oe2));
+          // printf("BEFORE n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
+          auto nvi = topo->split_edge(topo->halfedge(face,msi));
+          auto ov  = field[cvi];
+          field[nvi] = ov;
+          auto nv  = field[nvi];
+          // field.append(ov);
+          printf("SPLITTING EDGE %d VERTEX %d -> %d [%f,%f,%f]->[%f,%f,%f] (%d) ALLOC %d\n",
+                 (int)topo->halfedge(face,msi), (int)cvi, (int)nvi, 
+                 ov.x, ov.y, ov.z, nv.x, nv.y, nv.z, (int)field.size(), topo->allocated_vertices());
+          // printf("AFTER n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
+          break;
+        }
+      }
+    } while (is_changed == true);
+    // printf("COLLAPSE ZERO LENGTH EDGES\n");
+    // do {
     is_changed = false;
     for (auto e : topo->halfedges()) {
       auto src = topo->src(e);
       auto dst = topo->dst(e);
-      if (pos[(int)src] == pos[(int)dst]) {
+      if (field[src] == field[dst]) {
         if (topo->is_collapse_safe(e)) {
-          // printf("COLLAPSING %d\n", (int)e);
+          // printf("BEFORE n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
+          printf("COLLAPSING %d %d->%d\n", (int)e, (int)src, (int)dst);
           topo->collapse(e);
+          // printf("AFTER n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
           is_changed = true;
           break;
-        }
+        } else
+          printf("UNABLE TO COLLAPSE %d %d->%d\n", (int)e, (int)src, (int)dst);
       }
     }
   } while (is_changed == true);
+
+  printf("ERASING BOUNDARY EDGES\n");
+  do {
+    is_changed = false;
+    for (auto e : topo->boundary_edges()) {
+      printf("ERASING BOUNDARY EDGE %d\n", (int)e);
+      topo->erase(e, true);
+      is_changed = true;
+      break;
+    }
+  } while (is_changed == true);
+
+  printf("COLLECTING GARBAGE\n");
   auto updates = topo->collect_garbage();
-  // printf("AFTER GC %d UPDATES %d\n", field.size(), updates.x.size());
   int i = 0, tot = 0;
   for (auto update : updates.x) {
     if (update >= 0) tot += 1;
     // printf("  %d -> %d\n", i, update);
     i += 1;
   }
+  printf("AFTER GC %d UPDATES %d - %d\n", field.size(), updates.x.size(), tot);
   Array<TV3> new_points(tot);
   i = 0;
   for (auto update : updates.x) {
-    if (update >= 0) new_points[update] = pos[i];
+    if (update >= 0) {
+      new_points[update] = field[VertexId(i)];
+      // printf("MAPPING %d -> %d\n", i, update);
+    }
     i += 1;
   }
   auto new_soup = topo->face_soup().x;
   // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
   //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
-  return gc_mesh(Mesh(const_soup(new_soup), new_points));
+  write_mesh("tst0.stl", mesh.soup, mesh.points);
+  auto new_mesh     = Mesh(const_soup(new_soup), new_points);
+  write_mesh("tst1.stl", new_mesh.soup, new_mesh.points);
+  auto gc_new_mesh  = gc_mesh(new_mesh);
+  write_mesh("tst2.stl", gc_new_mesh.soup, gc_new_mesh.points);
+  auto unified_mesh = unify_mesh_vertices(new_mesh);
+  write_mesh("tst3.stl", unified_mesh.soup, unified_mesh.points);
+  // pretty_print_mesh(unified_mesh);
+  report_simplify_mesh(unified_mesh);
+  printf("--- END CLEANUP\n");
+  return gc_mesh(unified_mesh);
+  // return unified_mesh;
   // auto new_soup = topo->face_soup().x;
   // return gc_mesh(Mesh(const_soup(new_soup), pos));
 }
@@ -291,6 +420,13 @@ Mesh simplify_mesh(Mesh mesh) {
   // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
   //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
   return gc_mesh(Mesh(const_soup(new_soup), new_points));
+}
+
+Mesh cleanup_mesh (Mesh mesh) {
+  if (true)
+    return simplify_mesh(mesh);
+  else
+    return quick_cleanup_mesh(mesh);
 }
 
 // invert triangle soup so normals point inwards
@@ -446,8 +582,15 @@ void pretty_print_mesh(Mesh mesh) {
     printf("PT[%2d] %f,%f,%f\n", i, pt.x, pt.y, pt.z);
     i += 1;
   }
-  for (auto tri : mesh.soup->elements)
-    printf("TRI %2d,%2d,%2d\n", tri.x, tri.y, tri.z);
+  for (auto tri : mesh.soup->elements) {
+    // T a = Triangle::area(mesh.points[tri.x], mesh.points[tri.y], mesh.points[tri.z]);
+    auto p0 = mesh.points[tri.x];
+    auto p1 = mesh.points[tri.y];
+    auto p2 = mesh.points[tri.z];
+    T a = 0.5 * cross(p1 - p0, p2 - p0).magnitude();
+    printf("TRI %2d,%2d,%2d [%f,%f,%f] [%f,%f,%f] [%f,%f,%f] AREA %f\n",
+           tri.x, tri.y, tri.z, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, a);
+  }
 }
 
 void pretty_print_matrix(Matrix<T,4> M) {

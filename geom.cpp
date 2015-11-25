@@ -572,6 +572,45 @@ Geom* g_mul(Geom* a, Geom* b) {
     error("Bad args for mul"); return NULL;
   }
 }
+
+Geom* g_normalize(Geom* a) {
+  if (a->k == v3d_kind)
+    return g_v3d(g_v3d_val(a).normalized());
+  else if (a->k == v2d_kind)
+    return g_v2d(g_v2d_val(a).normalized());
+  else {
+    error("Bad args for normalize"); return NULL;
+  }
+  
+}
+
+Geom* g_magnitude(Geom* a) {
+  if (a->k == v3d_kind)
+    return g_num(g_v3d_val(a).magnitude());
+  else if (a->k == v2d_kind)
+    return g_num(g_v2d_val(a).magnitude());
+  else {
+    error("Bad args for magnitude"); return NULL;
+  }
+  
+}
+Geom* g_cross(Geom* a, Geom* b) {
+  if (a->k == v3d_kind && b->k == v3d_kind) {
+    return g_v3d(cross(g_v3d_val(a), g_v3d_val(b)));
+  } else {
+    error("Bad args for cross"); return NULL;
+  }
+}
+Geom* g_dot(Geom* a, Geom* b) {
+  if (a->k == v3d_kind && b->k == v3d_kind)
+    return g_num(dot(g_v3d_val(a), g_v3d_val(b)));
+  else if (a->k == num_kind && b->k == v2d_kind)
+    return g_num(dot(g_v2d_val(a), g_v2d_val(b)));
+  else {
+    error("Bad args for dot"); return NULL;
+  }
+}
+
 Geom* g_div(Geom* a, Geom* b) { 
   if (a->k == num_kind && b->k == num_kind)
     return g_num(g_num_val(a) * g_num_val(b));
@@ -706,6 +745,7 @@ Geom* g_offset(Geom* a, Geom* g) {
 }
 Geom* g_hollow(Geom* a, Geom* m) { return g_difference(m, g_offset(g_num(-g_num_val(a)), m)); }
 Geom* g_simplify(Geom* g) { return new MeshGeom(simplify_mesh(g_mesh_val(g))); }
+Geom* g_cleanup(Geom* g) { return new MeshGeom(cleanup_mesh(g_mesh_val(g))); }
 Geom* g_slice(Geom* a, Geom* g) { return new PolyGeom(slice(g_num_val(a), g_mesh_val(g))); }
 Geom* g_extrude(Geom* a, Geom* p) { return new MeshGeom(extrude(g_num_val(a), g_poly_val(p))); }
 Geom* g_thicken(Geom* a, Geom* l) {

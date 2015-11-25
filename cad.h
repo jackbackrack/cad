@@ -8,6 +8,7 @@
 #include <geode/vector/Rotation.h>
 #include <geode/geometry/platonic.h>
 #include <geode/geometry/BoxVector.h>
+#include <geode/geometry/Triangle3d.h>
 
 #include <cstdio>
 #include <math.h>

@@ -264,6 +264,69 @@ defmethod print (o:OutputStream, g:Mesh) :
 
 public defn none3 () -> Mesh : Mesh(($do-prim ls g-none))
 
+public defn plus (a:V2d, b:V2d) -> V2d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V2d(($do-prim ls g-add pa pb))
+public defn minus (a:V2d, b:V2d) -> V2d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V2d(($do-prim ls g-sub pa pb))
+public defn times (a:Num, b:V2d) -> V2d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V2d(($do-prim ls g-mul pa pb))
+public defn divide (a:V2d, b:Num) -> V2d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V2d(($do-prim ls g-div pa pb))
+public defn dot (a:V2d, b:V2d) -> Num :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Num(($do-prim ls g-dot pa pb))
+;; public defn cross (a:V2d, b:V2d) -> V3d :
+;;   val pa = ptr(a)
+;;   val pb = ptr(b)
+;;   V3d(($do-prim ls g-cross pa pb))
+public defn normalize (a:V2d) -> V2d :
+  val pa = ptr(a)
+  V2d(($do-prim ls g-normalize pa))
+public defn magnitude (a:V2d) -> Num :
+  val pa = ptr(a)
+  Num(($do-prim ls g-magnitude pa))
+
+public defn plus (a:V3d, b:V3d) -> V3d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V3d(($do-prim ls g-add pa pb))
+public defn minus (a:V3d, b:V3d) -> V3d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V3d(($do-prim ls g-sub pa pb))
+public defn times (a:Num, b:V3d) -> V3d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V3d(($do-prim ls g-mul pa pb))
+public defn divide (a:V3d, b:Num) -> V3d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V3d(($do-prim ls g-div pa pb))
+public defn dot (a:V3d, b:V3d) -> Num :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  Num(($do-prim ls g-dot pa pb))
+public defn cross (a:V3d, b:V3d) -> V3d :
+  val pa = ptr(a)
+  val pb = ptr(b)
+  V3d(($do-prim ls g-cross pa pb))
+public defn normalize (a:V3d) -> V3d :
+  val pa = ptr(a)
+  V3d(($do-prim ls g-normalize pa))
+public defn magnitude (a:V3d) -> Num :
+  val pa = ptr(a)
+  Num(($do-prim ls g-magnitude pa))
+
+
 public defn rprint (a:Polygon) -> Polygon :
   val p = ptr(a)
   Polygon(($do-prim ls g-print p))

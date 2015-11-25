@@ -280,6 +280,14 @@ Geom* parse_factor(Tokenizer& s) {
             return g_offset(args[0], args[1]);
           } else if (tok1.sym == "hollow") {
             g = g_hollow(args[0], args[1]);
+          } else if (tok1.sym == "rot") {
+            if (args.size() == 2)
+              g = g_rot(args[0], args[1]);
+            else if (args.size() == 3)
+              g = g_rot_from_to(args[0], args[1], args[2]);
+            else {
+              error("WRONG NUM OF ARGS FOR ROT");
+            }
           } else if (tok1.sym == "yrot") {
             g = g_yrot(args[0], args[1]);
           } else if (tok1.sym == "zrot") {
@@ -314,6 +322,8 @@ Geom* parse_factor(Tokenizer& s) {
             g = g_centering(args[0]);
           } else if (tok1.sym == "simplify") {
             g = g_simplify(args[0]);
+          } else if (tok1.sym == "cleanup") {
+            g = g_cleanup(args[0]);
           } else if (tok1.sym == "extrude") {
             g = g_extrude(args[0], args[1]);
           } else if (tok1.sym == "cone") {
@@ -525,13 +535,22 @@ int display_mesh (Mesh mesh, bool is_show_lines, bool is_show_normals) {
       normalize(n);
       auto c = (p0 + p1 + p2) * 0.3333;
       auto d = c + n;
-      glColor4f(0.0, 1.0, 0.0, 1.0);
+      auto dc = get_color(n);
+      // glColor4f(0.0, 1.0, 0.0, 1.0);
+      glColor4f(dc.x, dc.y, dc.z, 1.0);
       glBegin(GL_LINES);
       glVertex3d(c.x, c.y, c.z);
       glVertex3d(d.x, d.y, d.z);
       glEnd();
     }
   }
+  glPointSize(4);
+  glColor3f(1, 1, 1);
+  glBegin(GL_POINTS);
+  for (auto p : mesh.points) {
+    glVertex3d(p.x, p.y, p.z);
+  }
+  glEnd();
   glEndList();
   return dl;
 }

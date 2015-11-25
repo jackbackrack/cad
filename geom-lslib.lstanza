@@ -188,6 +188,14 @@ externfn g_reflect_yz : (ptr<?>) -> ptr<?>
 defn g-reflect-yz (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_yz, g.value))
 externfn g_reflect_xz : (ptr<?>) -> ptr<?>
 defn g-reflect-xz (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_reflect_xz, g.value))
+externfn g_magnitude : (ptr<?>) -> ptr<?>
+defn g-magnitude (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_magnitude, g.value))
+externfn g_normalize : (ptr<?>) -> ptr<?>
+defn g-normalize (g:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_normalize, g.value))
+externfn g_dot : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-dot (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_dot, a.value, b.value))
+externfn g_cross : (ptr<?>, ptr<?>) -> ptr<?>
+defn g-cross (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_cross, a.value, b.value))
 externfn g_add : (ptr<?>, ptr<?>) -> ptr<?>
 defn g-add (a:ref<Ptr>, b:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_add, a.value, b.value))
 externfn g_mul : (ptr<?>, ptr<?>) -> ptr<?>
