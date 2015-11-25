@@ -246,19 +246,22 @@ Mesh quick_simplify_mesh(Mesh mesh) {
 
 int max_segment (Segment<TV3>& s0, Segment<TV3>& s1, Segment<TV3>& s2) {
   // printf("S0 %f S1 %f S2 %f\n", s0.length(), s1.length(), s2.length());
-  if (s0.length() > s1.length() && s0.length() > s2.length()) {
+  auto ml = max(s0.length(), max(s1.length(), s2.length()));
+  if (ml == s0.length())
     return 0;
-  } else if (s1.length() > s0.length() && s1.length() > s2.length()) {
+  else if (ml == s1.length())
     return 1;
-  } else if (s2.length() > s0.length() && s2.length() > s1.length()) {
+  else if (ml == s2.length())
     return 2;
-  } else  {
+  else  {
     error("COULD NOT FIND MAX SEGMENT");
     return -1;
   }
 }
 
 VertexId common_vertex (VertexId e0v0, VertexId e0v1, VertexId e1v0, VertexId e1v1) {
+  // FIND VERTEX COMMON TO BOTH EDGES
+  // TODO: PROBABLY IMPLICIT IN REPRESENTATION
   if (e0v0 == e1v0 || e0v0 == e1v1) return e0v0;
   else if (e0v1 == e1v0 || e0v1 == e1v1) return e0v1;
   else {
@@ -278,7 +281,8 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
   FieldId<TV3,VertexId> pos_id = topo->add_field(Field<TV,VertexId>(mesh.points.copy()), vertex_position_id);
   auto &field = topo->field(pos_id);
 
-  std::vector<FaceId> split_faces;
+  topo->dump_internals();
+  // std::vector<FaceId> split_faces;
   bool is_changed = false;
   printf("CLEANUP ZERO GEOMETRY\n");
   do {
@@ -312,9 +316,11 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
           field[nvi] = ov;
           auto nv  = field[nvi];
           // field.append(ov);
-          printf("SPLITTING EDGE %d VERTEX %d -> %d [%f,%f,%f]->[%f,%f,%f] (%d) ALLOC %d\n",
-                 (int)topo->halfedge(face,msi), (int)cvi, (int)nvi, 
+          printf("SPLITTING EDGE %d (%d,%d,%d) ON FACE %d VERTEX %d -> %d [%f,%f,%f]->[%f,%f,%f] (%d) ALLOC %d\n",
+                 (int)topo->halfedge(face,msi), int(e0), int(e1), int(e2),
+                 (int)face, (int)cvi, (int)nvi, 
                  ov.x, ov.y, ov.z, nv.x, nv.y, nv.z, (int)field.size(), topo->allocated_vertices());
+          topo->dump_internals();
           // printf("AFTER n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
           break;
         }
@@ -329,8 +335,9 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
       if (field[src] == field[dst]) {
         if (topo->is_collapse_safe(e)) {
           // printf("BEFORE n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
-          printf("COLLAPSING %d %d->%d\n", (int)e, (int)src, (int)dst);
+          printf("COLLAPSING E%d V%d->V%d\n", (int)e, (int)src, (int)dst);
           topo->collapse(e);
+          topo->dump_internals();
           // printf("AFTER n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
           is_changed = true;
           break;
@@ -340,16 +347,16 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
     }
   } while (is_changed == true);
 
-  printf("ERASING BOUNDARY EDGES\n");
-  do {
-    is_changed = false;
-    for (auto e : topo->boundary_edges()) {
-      printf("ERASING BOUNDARY EDGE %d\n", (int)e);
-      topo->erase(e, true);
-      is_changed = true;
-      break;
-    }
-  } while (is_changed == true);
+  // printf("ERASING BOUNDARY EDGES\n");
+  // do {
+  //   is_changed = false;
+  //   for (auto e : topo->boundary_edges()) {
+  //     printf("ERASING BOUNDARY EDGE %d\n", (int)e);
+  //     topo->erase(e, true);
+  //     is_changed = true;
+  //     break;
+  //   }
+  // } while (is_changed == true);
 
   printf("COLLECTING GARBAGE\n");
   auto updates = topo->collect_garbage();
@@ -375,14 +382,16 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
   write_mesh("tst0.stl", mesh.soup, mesh.points);
   auto new_mesh     = Mesh(const_soup(new_soup), new_points);
   write_mesh("tst1.stl", new_mesh.soup, new_mesh.points);
-  auto gc_new_mesh  = gc_mesh(new_mesh);
-  write_mesh("tst2.stl", gc_new_mesh.soup, gc_new_mesh.points);
-  auto unified_mesh = unify_mesh_vertices(new_mesh);
-  write_mesh("tst3.stl", unified_mesh.soup, unified_mesh.points);
+  auto final_mesh = new_mesh;
+  // auto gc_new_mesh  = gc_mesh(new_mesh);
+  // write_mesh("tst2.stl", gc_new_mesh.soup, gc_new_mesh.points);
+  // auto unified_mesh = unify_mesh_vertices(new_mesh);
+  // write_mesh("tst3.stl", unified_mesh.soup, unified_mesh.points);
   // pretty_print_mesh(unified_mesh);
-  report_simplify_mesh(unified_mesh);
+  // auto final_mesh = unified_mesh;
+  report_simplify_mesh(final_mesh);
   printf("--- END CLEANUP\n");
-  return gc_mesh(unified_mesh);
+  return final_mesh;
   // return unified_mesh;
   // auto new_soup = topo->face_soup().x;
   // return gc_mesh(Mesh(const_soup(new_soup), pos));
@@ -582,14 +591,16 @@ void pretty_print_mesh(Mesh mesh) {
     printf("PT[%2d] %f,%f,%f\n", i, pt.x, pt.y, pt.z);
     i += 1;
   }
+  i = 0;
   for (auto tri : mesh.soup->elements) {
     // T a = Triangle::area(mesh.points[tri.x], mesh.points[tri.y], mesh.points[tri.z]);
     auto p0 = mesh.points[tri.x];
     auto p1 = mesh.points[tri.y];
     auto p2 = mesh.points[tri.z];
     T a = 0.5 * cross(p1 - p0, p2 - p0).magnitude();
-    printf("TRI %2d,%2d,%2d [%f,%f,%f] [%f,%f,%f] [%f,%f,%f] AREA %f\n",
-           tri.x, tri.y, tri.z, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, a);
+    printf("TRI[%d] %2d,%2d,%2d [%f,%f,%f] [%f,%f,%f] [%f,%f,%f] AREA %f\n",
+           i, tri.x, tri.y, tri.z, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, a);
+    i += 1;
   }
 }
 
