@@ -8,6 +8,7 @@
 #include <geode/mesh/SegmentSoup.h>
 #include <geode/mesh/TriangleTopology.h>
 #include <geode/mesh/improve_mesh.h>
+#include <geode/mesh/decimate.h>
 #include <fstream>
 
 double rndd () {
@@ -269,9 +270,50 @@ VertexId common_vertex (VertexId e0v0, VertexId e0v1, VertexId e1v0, VertexId e1
   }
 }
 
+Mesh topo_to_mesh (Ref<MutableTriangleTopology> topo, const Field<TV3,VertexId>& field) {
+  auto updates = topo->collect_garbage();
+  int i = 0, tot = 0;
+  for (auto update : updates.x) {
+    if (update >= 0) tot += 1;
+    // printf("  %d -> %d\n", i, update);
+    i += 1;
+  }
+  printf("AFTER GC %d UPDATES %d - %d\n", field.size(), updates.x.size(), tot);
+  Array<TV3> new_points(tot);
+  i = 0;
+  for (auto update : updates.x) {
+    if (update >= 0) {
+      new_points[update] = field[VertexId(i)];
+      // printf("MAPPING %d -> %d\n", i, update);
+    }
+    i += 1;
+  }
+  auto new_soup = topo->face_soup().x;
+  // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
+  //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
+  // write_mesh("tst0.stl", mesh.soup, mesh.points);
+  auto new_mesh = Mesh(const_soup(new_soup), new_points);
+  return new_mesh;
+}
+
+Mesh decimate_mesh(Mesh mesh) {
+  // printf("STARTING SIMPLIFICATION\n");
+  // report_simplify_mesh(mesh);
+  Array<TV3> pos(mesh.points);
+  Field<TV3,VertexId> field(pos.copy());
+  auto topo = new_<MutableTriangleTopology>();
+  topo->add_vertices(mesh.points.size());
+  for (auto face : mesh.soup->elements)
+    topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
+  // ImproveOptions options(1.1,0.1,0.1);
+  decimate_inplace(topo, field, 0.01,0.01,0,0);
+  // printf("BEFORE GC %d\n", field.size());
+  return topo_to_mesh(topo, field);
+}
+
 Mesh quick_cleanup_mesh(Mesh mesh) {
   printf("--- START CLEANUP\n");
-  pretty_print_mesh(mesh);
+  // pretty_print_mesh(mesh);
   // write_mesh("tst1.stl", mesh.soup, mesh.points);
   // printf("---\n");
   // report_simplify_mesh(mesh);
@@ -281,7 +323,8 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
   FieldId<TV3,VertexId> pos_id = topo->add_field(Field<TV,VertexId>(mesh.points.copy()), vertex_position_id);
   auto &field = topo->field(pos_id);
 
-  topo->dump_internals();
+  // topo->dump_internals();
+  // pretty_print_mesh(topo_to_mesh(topo, field));
   // std::vector<FaceId> split_faces;
   bool is_changed = false;
   printf("CLEANUP ZERO GEOMETRY\n");
@@ -320,7 +363,9 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
                  (int)topo->halfedge(face,msi), int(e0), int(e1), int(e2),
                  (int)face, (int)cvi, (int)nvi, 
                  ov.x, ov.y, ov.z, nv.x, nv.y, nv.z, (int)field.size(), topo->allocated_vertices());
-          topo->dump_internals();
+          topo->collect_garbage();
+          // pretty_print_mesh(topo_to_mesh(topo, field));
+          // topo->dump_internals();
           // printf("AFTER n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
           break;
         }
@@ -337,7 +382,9 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
           // printf("BEFORE n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
           printf("COLLAPSING E%d V%d->V%d\n", (int)e, (int)src, (int)dst);
           topo->collapse(e);
-          topo->dump_internals();
+          topo->collect_garbage();
+          // pretty_print_mesh(topo_to_mesh(topo, field));
+          // topo->dump_internals();
           // printf("AFTER n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
           is_changed = true;
           break;
@@ -359,39 +406,27 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
   // } while (is_changed == true);
 
   printf("COLLECTING GARBAGE\n");
-  auto updates = topo->collect_garbage();
-  int i = 0, tot = 0;
-  for (auto update : updates.x) {
-    if (update >= 0) tot += 1;
-    // printf("  %d -> %d\n", i, update);
-    i += 1;
-  }
-  printf("AFTER GC %d UPDATES %d - %d\n", field.size(), updates.x.size(), tot);
-  Array<TV3> new_points(tot);
-  i = 0;
-  for (auto update : updates.x) {
-    if (update >= 0) {
-      new_points[update] = field[VertexId(i)];
-      // printf("MAPPING %d -> %d\n", i, update);
-    }
-    i += 1;
-  }
-  auto new_soup = topo->face_soup().x;
-  // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
-  //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
-  write_mesh("tst0.stl", mesh.soup, mesh.points);
-  auto new_mesh     = Mesh(const_soup(new_soup), new_points);
-  write_mesh("tst1.stl", new_mesh.soup, new_mesh.points);
-  auto final_mesh = new_mesh;
-  // auto gc_new_mesh  = gc_mesh(new_mesh);
-  // write_mesh("tst2.stl", gc_new_mesh.soup, gc_new_mesh.points);
-  // auto unified_mesh = unify_mesh_vertices(new_mesh);
-  // write_mesh("tst3.stl", unified_mesh.soup, unified_mesh.points);
-  // pretty_print_mesh(unified_mesh);
-  // auto final_mesh = unified_mesh;
+  // topo->dump_internals();
+  auto new_mesh = topo_to_mesh(topo, field);
+  // auto dec_mesh = decimate_mesh(new_mesh);
+  // printf("DECIMATING MESH\n");
+  // RawField<TV3,VertexId> rawfield(field);
+  // decimate_inplace(topo, rawfield, 0.0001, 0.0001, 0, 0);
+  // write_mesh("tst1.stl", new_mesh.soup, new_mesh.points);
+  // auto dec_mesh = simplify_mesh(new_mesh);
+  auto dec_mesh = new_mesh;
+  auto final_mesh = dec_mesh;
+  /*
+  auto gc_new_mesh  = gc_mesh(dec_mesh);
+  write_mesh("tst2.stl", gc_new_mesh.soup, gc_new_mesh.points);
+  auto unified_mesh = unify_mesh_vertices(new_mesh);
+  write_mesh("tst3.stl", unified_mesh.soup, unified_mesh.points);
+  pretty_print_mesh(unified_mesh);
+  auto final_mesh = unified_mesh;
+  */
   report_simplify_mesh(final_mesh);
   printf("--- END CLEANUP\n");
-  return final_mesh;
+  return gc_mesh(final_mesh);
   // return unified_mesh;
   // auto new_soup = topo->face_soup().x;
   // return gc_mesh(Mesh(const_soup(new_soup), pos));
@@ -411,28 +446,11 @@ Mesh simplify_mesh(Mesh mesh) {
   // ImproveOptions options(1.0000001,0.0000001,0.0000001);
   improve_mesh_inplace(topo, field, options);
   // printf("BEFORE GC %d\n", field.size());
-  auto updates = topo->collect_garbage();
-  // printf("AFTER GC %d UPDATES %d\n", field.size(), updates.x.size());
-  int i = 0, tot = 0;
-  for (auto update : updates.x) {
-    if (update >= 0) tot += 1;
-    // printf("  %d -> %d\n", i, update);
-    i += 1;
-  }
-  Array<TV3> new_points(tot);
-  i = 0;
-  for (auto update : updates.x) {
-    if (update >= 0) new_points[update] = pos[i];
-    i += 1;
-  }
-  auto new_soup = topo->face_soup().x;
-  // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
-  //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
-  return gc_mesh(Mesh(const_soup(new_soup), new_points));
+  return topo_to_mesh(topo, field);
 }
 
 Mesh cleanup_mesh (Mesh mesh) {
-  if (true)
+  if (false)
     return simplify_mesh(mesh);
   else
     return quick_cleanup_mesh(mesh);
@@ -587,6 +605,7 @@ void pretty_print_v3i(IV3 pt) {
 
 void pretty_print_mesh(Mesh mesh) {
   int i = 0;
+  printf("AREA %f VOLUME %f\n", mesh.soup->surface_area(RawArray<const TV3>(mesh.points)), mesh.soup->volume(RawArray<const TV3>(mesh.points)));
   for (auto pt : mesh.points) {
     printf("PT[%2d] %f,%f,%f\n", i, pt.x, pt.y, pt.z);
     i += 1;
@@ -1061,7 +1080,7 @@ Mesh cone_mesh(T len, Array<TV2> poly) {
     c = c + elt;
   }
   c = c / (double)n_boundary;
-  auto lid = invert_mesh(triangulate(array_to_nested(bot)));
+  auto lid = triangulate(array_to_nested(bot));
 
   vh = lid.points;
   vh.append(vec(c.x, c.y, zmax));
@@ -1072,7 +1091,7 @@ Mesh cone_mesh(T len, Array<TV2> poly) {
                  
   for (int i = 0; i < n_boundary; i++) {
     int ni = (i + 1)%n_boundary;
-    faces.append(vec(i, n_boundary, ni));
+    faces.append(vec(i, ni, n_boundary));
   }
   return fab_mesh(faces, vh);
 }
