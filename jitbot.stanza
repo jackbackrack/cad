@@ -150,7 +150,7 @@ defn print-elts (o:OutputStream, g:Geom, name:String, len, elt) :
     print(o, elt(g, i))
   print-all(o ["])"])
   
-public defclass ArrayV2d <: Geom
+public defclass ArrayV2d <: Geom & Streamable<V2d>
 public defmulti elt (v:ArrayV2d, i:Int) -> V2d
 public defmulti len (v:ArrayV2d) -> Int
 public defn ArrayV2d (ptr:?) :
@@ -167,7 +167,18 @@ public defn pprint (a:ArrayV2d) -> ArrayV2d :
 defmethod print (o:OutputStream, g:ArrayV2d) :
   print-elts(o, g, "ArrayV2d", len, elt)
 
-public defclass ArrayV3d <: Geom
+defclass ArrayV2dStream <: Stream<V2d>
+defmethod to-stream (a:ArrayV2d) -> ArrayV2dStream :
+   var i = 0
+   new ArrayV2dStream :
+      defmethod more? (this) :
+         i < len(a)
+      defmethod calc-next (this) -> V2d :
+         val x = elt(a, i)
+         i = i + 1
+         x
+
+public defclass ArrayV3d <: Geom & Streamable<V3d>
 public defmulti elt (v:ArrayV3d, i:Int) -> V3d
 public defmulti len (v:ArrayV3d) -> Int
 public defn ArrayV3d (ptr:?) :
@@ -184,7 +195,19 @@ public defn pprint (a:ArrayV3d) -> ArrayV3d :
 defmethod print (o:OutputStream, g:ArrayV3d) :
   print-elts(o, g, "ArrayV3d", len, elt)
 
-public defclass ArrayV3i <: Geom
+defclass ArrayV3dStream <: Stream<V3d>
+defmethod to-stream (a:ArrayV3d) -> ArrayV3dStream :
+   var i = 0
+   new ArrayV3dStream :
+      defmethod more? (this) :
+         i < len(a)
+      defmethod calc-next (this) -> V3d :
+         val x = elt(a, i)
+         i = i + 1
+         x
+
+
+public defclass ArrayV3i <: Geom & Streamable<V3i>
 public defmulti elt (v:ArrayV3i, i:Int) -> V3i
 public defmulti len (v:ArrayV3i) -> Int
 public defn ArrayV3i (ptr:?) :
@@ -200,6 +223,17 @@ public defn pprint (a:ArrayV3i) -> ArrayV3i :
   ArrayV3i(($do-prim ls g-pretty-print pa))
 defmethod print (o:OutputStream, g:ArrayV3i) :
   print-elts(o, g, "ArrayV3i", len, elt)
+
+defclass ArrayV3iStream <: Stream<V3i>
+defmethod to-stream (a:ArrayV3i) -> ArrayV3iStream :
+   var i = 0
+   new ArrayV3iStream :
+      defmethod more? (this) :
+         i < len(a)
+      defmethod calc-next (this) -> V3i :
+         val x = elt(a, i)
+         i = i + 1
+         x
 
 public definterface Polygon <: Geom2 
 public defmulti elt (v:Polygon, i:Int) -> ArrayV2d

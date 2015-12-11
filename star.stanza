@@ -81,8 +81,8 @@ defn seat-polygons () :
   [seat, back, side, side]
 
 defn edge-connector (len:Float, inner:Float, outer:Float, p0:V3d, p1:V3d) -> Mesh :
-  val shape = extrude(num(len), square(num(outer)))
-  val hole  = extrude(num(len + 0.1), square(num(inner)))
+  val shape = extrude(num(len),       circle(num(outer)))
+  val hole  = extrude(num(len + 0.1), circle(num(inner)))
   val v     = p1 - p0
   val nv    = normalize(v)
   val end   = num(len) * nv
@@ -103,6 +103,20 @@ defn all-fat-vertices (len:Float, inner:Float, outer:Float, pts:List<V3d>) :
       yield(mov(pt, fat-vertex(len, inner, outer, pt, nbrs)))
 
 
+defn mesh-fat-vertices (len:Float, inner:Float, outer:Float, verts:List<V3d>, tris:List<V3i>) :
+  generate<Mesh> :
+    for i in 0 to length(verts) do :
+      val pt = verts[i]
+      val nbrs = HashTable< Int, True|False >({ _ });
+      for tri in tris do :
+        for j in 0 to 3 do :
+          if elt(tri, j) == i :
+            nbrs[elt(tri, (j + 1) % 3)] = true
+      yield(mov(pt, fat-vertex(len, inner, outer, pt, stream({verts[_]}, keys(nbrs)))))
+
+defn mesh-fat-vertices (len:Float, inner:Float, outer:Float, mesh:Mesh) :
+  mesh-fat-vertices(len, inner, outer, to-list(points(mesh)), to-list(faces(mesh)))
+
 ;;  val points = points(mesh)
 ;;  val faces  = edges(mesh)
   
@@ -118,9 +132,10 @@ defn tri-points (l:Float) :
   to-list([vec(neg(l),0.0,neg(l) * d),vec(l,0.0,neg(l) * d),vec(0.0,neg(l),l * d),vec(0.0,l,l * d)])
 val tri-verts = all-fat-vertices(10.0, 1.5, 3.0, tri-points(30.0))
 save(str("tri-verts.stl"), reduce(bit-or, none3(), tri-verts))
+val cube-verts = mesh-fat-vertices(2.0, 0.1, 0.5, cube(num(4.0)))
 ;; val cube-points = to-list([vec(-4.0,-4.0,-4.0),vec(-4.0, 4.0,-4.0),vec( 4.0,-4.0,-4.0),vec( 4.0, 4.0,-4.0), vec(-4.0,-4.0, 4.0),vec(-4.0, 4.0, 4.0),vec( 4.0,-4.0, 4.0),vec( 4.0, 4.0, 4.0)])
 ;; val cube-verts = all-fat-vertices(2.0, 0.1, 0.5, cube-points)
-;; save(str("cube-verts.stl"), reduce(bit-or, none3(), cube-verts))
+save(str("cube-verts.stl"), reduce(bit-or, none3(), cube-verts))
 
 ;; save(str("chair.stl"), assemble-chair(seat-polygons(), seat-transformations(1.0), 1.5))
 ;; save(str("slices.stl"), dice(cube(num(5.0)), 13))
