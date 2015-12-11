@@ -103,7 +103,6 @@ defn all-fat-vertices (len:Float, inner:Float, outer:Float, pts:List<V3d>) :
       yield(mov(pt, fat-vertex(len, inner, outer, pt, nbrs)))
 
 
-
 ;;  val points = points(mesh)
 ;;  val faces  = edges(mesh)
   
@@ -114,9 +113,14 @@ println(arrayV2d([vec(-1.0,-1.0)]))
 save(str("c1.stl"), edge-connector(4.0, 0.1, 0.5, vec(0.0,0.0,0.0), vec(8.0, 0.0, 0.0)))
 save(str("c2.stl"), edge-connector(4.0, 0.1, 0.5, vec(4.0,0.0,0.0), vec(12.0, 0.0, 0.0)))
 save(str("c3.stl"), fat-vertex(2.0, 0.1, 0.5, vec(-4.0,-4.0,0.0), [vec(0.0, 0.0, 4.0), vec(4.0, -4.0, 0.0), vec(0.0, 4.0, 0.0)]))
-val tri-points = to-list([vec(-4.0,-4.0,0.0),vec(0.0, 0.0, 4.0), vec(4.0, -4.0, 0.0), vec(0.0, 4.0, 0.0)])
-val verts = all-fat-vertices(2.0, 0.1, 0.5, tri-points)
-;; save(str("verts.stl"), reduce(bit-or, none3(), verts))
+defn tri-points (l:Float) :
+  val d = 1.0 / sqrt(2.0)
+  to-list([vec(neg(l),0.0,neg(l) * d),vec(l,0.0,neg(l) * d),vec(0.0,neg(l),l * d),vec(0.0,l,l * d)])
+val tri-verts = all-fat-vertices(10.0, 1.5, 3.0, tri-points(30.0))
+save(str("tri-verts.stl"), reduce(bit-or, none3(), tri-verts))
+;; val cube-points = to-list([vec(-4.0,-4.0,-4.0),vec(-4.0, 4.0,-4.0),vec( 4.0,-4.0,-4.0),vec( 4.0, 4.0,-4.0), vec(-4.0,-4.0, 4.0),vec(-4.0, 4.0, 4.0),vec( 4.0,-4.0, 4.0),vec( 4.0, 4.0, 4.0)])
+;; val cube-verts = all-fat-vertices(2.0, 0.1, 0.5, cube-points)
+;; save(str("cube-verts.stl"), reduce(bit-or, none3(), cube-verts))
 
 ;; save(str("chair.stl"), assemble-chair(seat-polygons(), seat-transformations(1.0), 1.5))
 ;; save(str("slices.stl"), dice(cube(num(5.0)), 13))

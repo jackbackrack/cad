@@ -475,7 +475,7 @@ void IsoSurface::FreeMemory() {
 
 Mesh offset_mesh(T off, Mesh mesh) {
   IsoSurface surface;
-  int n = 20;
+  int n = 40;
   auto sbox = bounding_box(mesh.points);
   auto sdims = sbox.max - sbox.min;
   auto i_cell_size = min(sdims.x, min(sdims.y, sdims.z)) / n;

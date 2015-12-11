@@ -216,6 +216,8 @@ extern Nested<TV2> stroke_char (char letter);
 
 extern Nested<TV2> stroke_text (std::string txt);
       
+extern Mesh dither_mesh(Mesh mesh, double delta);
+
 extern void init_cad ( void );
 
 #endif

@@ -228,6 +228,7 @@ extern "C" Geom* g_cross(Geom* a, Geom* b);
 extern "C" Geom* g_dot(Geom* a, Geom* b);
 extern "C" Geom* g_mul(Geom* a, Geom* b);
 extern "C" Geom* g_div(Geom* a, Geom* b);
+extern "C" Geom* g_dither(Geom* a);
 extern "C" Geom* g_sub(Geom* a, Geom* b);
 extern "C" Geom* g_intersection(Geom* a, Geom* b);
 extern "C" Geom* g_union(Geom* a, Geom* b);

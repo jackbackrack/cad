@@ -8,8 +8,9 @@
 #include <geode/mesh/SegmentSoup.h>
 #include <geode/mesh/TriangleTopology.h>
 #include <geode/mesh/improve_mesh.h>
-#include <geode/mesh/decimate.h>
+// #include <geode/mesh/decimate.h>
 #include <fstream>
+
 
 double rndd () {
   return (double)((double)rand() / (double)RAND_MAX);
@@ -105,13 +106,19 @@ Mesh const_mesh(Tuple<Ref<TriangleSoup>, Array<TV3>> val) {
 }
 
 void report_simplify_mesh(Mesh mesh) {
-  printf("START REPORTING MESH ISSUES\n");
+  bool is_printed_headline = false;
+  bool is_found_problem = false;
   int fi = 0;
   for (auto face : mesh.soup->elements) {
     Triangle<TV3> tri(mesh.points[face[0]],
                       mesh.points[face[1]],
                       mesh.points[face[2]]);
     if (tri.area() == 0.0) {
+      is_found_problem = true;
+      if (!is_printed_headline) {
+        is_printed_headline = true;
+        printf("START REPORTING MESH ISSUES\n");
+      }
       printf("ZERO AREA TRI %d: ", fi);
       printf("[%f,%f,%f] [%f,%f,%f] [%f,%f,%f]: ",
              tri.x0.x, tri.x0.y, tri.x0.z, tri.x1.x, tri.x1.y, tri.x1.z, tri.x2.x, tri.x2.y, tri.x2.z);
@@ -126,10 +133,17 @@ void report_simplify_mesh(Mesh mesh) {
   for (int i = 0; i < mesh.points.size(); i++) {
     auto p = mesh.points[i];
     auto j = same_vertices.get_or_insert(p, i);
-    if (i != j)
+    if (i != j) {
+      is_found_problem = true;
+      if (!is_printed_headline) {
+        is_printed_headline = true;
+        printf("START REPORTING MESH ISSUES\n");
+      }
       printf("REDUNDANT POINT [%f,%f,%f] %d -> %d \n", p.x, p.y, p.z, i, j);
+    }
   }
-  printf("END REPORTING MESH ISSUES\n");
+  if (is_found_problem)
+    printf("END REPORTING MESH ISSUES\n");
 }
 
 Mesh dither_mesh(Mesh mesh, double delta) {
@@ -137,35 +151,6 @@ Mesh dither_mesh(Mesh mesh, double delta) {
   for (auto point : mesh.points)
     points.append(point + vec(rndd(-delta, delta), rndd(-delta, delta), rndd(-delta, delta)));
   return fab_mesh(mesh.soup, points);
-}
-
-Mesh gc_mesh(Mesh mesh) {
-  // printf("GCING\n");
-  // pretty_print_mesh(mesh);
-  Array<bool> is_points;
-  for (int i = 0; i < mesh.points.size(); i++)
-    is_points.append(false);
-  Array<IV3> new_faces;
-  for (auto face : mesh.soup->elements) 
-    is_points[face.x] = is_points[face.y] = is_points[face.z] = true;
-  int delta = 0;
-  Array<int> mapping;
-  Array<TV3> new_points;
-  for (int i = 0; i < mesh.points.size(); i++) {
-    mapping.append(i - delta);
-    if (is_points[i]) {
-      // printf("MAPPING %d TO %d\n", i, i - delta);
-      new_points.append(mesh.points[i]);
-    } else {
-      // printf("REMOVING %d DELTA %d\n", i, delta);
-      delta += 1;
-    }
-  }
-  for (auto face : mesh.soup->elements) 
-    new_faces.append(vec(mapping[face.x], mapping[face.y], mapping[face.z]));
-  // printf("%d POINTS NOW %d REMOVED %d POINTS DELTA %d\n",
-  //        mesh.points.size(), new_points.size(), mesh.points.size() - new_points.size(), delta);
-  return fab_mesh(new_faces, new_points);
 }
 
 Mesh unify_mesh_vertices (Mesh mesh) {
@@ -270,6 +255,35 @@ VertexId common_vertex (VertexId e0v0, VertexId e0v1, VertexId e1v0, VertexId e1
   }
 }
 
+Mesh gc_mesh(Mesh mesh) {
+  // printf("GCING\n");
+  // pretty_print_mesh(mesh);
+  Array<bool> is_points;
+  for (int i = 0; i < mesh.points.size(); i++)
+    is_points.append(false);
+  Array<IV3> new_faces;
+  for (auto face : mesh.soup->elements) 
+    is_points[face.x] = is_points[face.y] = is_points[face.z] = true;
+  int delta = 0;
+  Array<int> mapping;
+  Array<TV3> new_points;
+  for (int i = 0; i < mesh.points.size(); i++) {
+    mapping.append(i - delta);
+    if (is_points[i]) {
+      // printf("MAPPING %d TO %d\n", i, i - delta);
+      new_points.append(mesh.points[i]);
+    } else {
+      // printf("REMOVING %d DELTA %d\n", i, delta);
+      delta += 1;
+    }
+  }
+  for (auto face : mesh.soup->elements) 
+    new_faces.append(vec(mapping[face.x], mapping[face.y], mapping[face.z]));
+  // printf("%d POINTS NOW %d REMOVED %d POINTS DELTA %d\n",
+  //        mesh.points.size(), new_points.size(), mesh.points.size() - new_points.size(), delta);
+  return fab_mesh(new_faces, new_points);
+}
+
 Mesh topo_to_mesh (Ref<MutableTriangleTopology> topo, const Field<TV3,VertexId>& field) {
   auto updates = topo->collect_garbage();
   int i = 0, tot = 0;
@@ -278,7 +292,7 @@ Mesh topo_to_mesh (Ref<MutableTriangleTopology> topo, const Field<TV3,VertexId>&
     // printf("  %d -> %d\n", i, update);
     i += 1;
   }
-  printf("AFTER GC %d UPDATES %d - %d\n", field.size(), updates.x.size(), tot);
+  // printf("AFTER GC %d UPDATES %d - %d\n", field.size(), updates.x.size(), tot);
   Array<TV3> new_points(tot);
   i = 0;
   for (auto update : updates.x) {
@@ -293,22 +307,59 @@ Mesh topo_to_mesh (Ref<MutableTriangleTopology> topo, const Field<TV3,VertexId>&
   //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
   // write_mesh("tst0.stl", mesh.soup, mesh.points);
   auto new_mesh = Mesh(const_soup(new_soup), new_points);
-  return new_mesh;
+  auto gcd_mesh = gc_mesh(new_mesh);
+  // auto gcd_mesh = final_mesh;
+  report_simplify_mesh(gcd_mesh);
+  return gcd_mesh;
 }
 
-Mesh decimate_mesh(Mesh mesh) {
-  // printf("STARTING SIMPLIFICATION\n");
-  // report_simplify_mesh(mesh);
-  Array<TV3> pos(mesh.points);
-  Field<TV3,VertexId> field(pos.copy());
-  auto topo = new_<MutableTriangleTopology>();
-  topo->add_vertices(mesh.points.size());
-  for (auto face : mesh.soup->elements)
-    topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
-  // ImproveOptions options(1.1,0.1,0.1);
-  decimate_inplace(topo, field, 0.01,0.01,0,0);
-  // printf("BEFORE GC %d\n", field.size());
-  return topo_to_mesh(topo, field);
+bool report_unsafe_collapse (Ref<MutableTriangleTopology> topo, HalfedgeId h) {
+  const auto o = topo->reverse(h);
+  const auto v0 = topo->src(h),
+             v1 = topo->dst(h);
+
+  // If v0 and v1 are on different boundaries, we can't do this
+  if (topo->is_boundary(v0) && topo->is_boundary(v1) &&
+      !topo->is_boundary(h) && !topo->is_boundary(o)) {
+    printf("If v0 and v1 are on different boundaries, we can't do this\n");
+    return false;
+  }
+
+  // Can't snip off an isolated vl or vr
+  if ((topo->is_boundary(topo->reverse(topo->next(h))) && topo->is_boundary(topo->reverse(topo->prev(h)))) ||
+      (topo->is_boundary(topo->reverse(topo->next(o))) && topo->is_boundary(topo->reverse(topo->prev(o))))) {
+    printf("Can't snip off an isolated vl or vr\n");
+    return false;
+  }
+
+  // Look up left and right vertices
+  const auto vl = topo->is_boundary(h) ? VertexId() : topo->dst(topo->next(h)),
+             vr = topo->is_boundary(o) ? VertexId() : topo->dst(topo->next(o));
+
+  // This only happens in temporarily invalid situations, such as if
+  // split_along_edge is called and not cleaned up.  No good can come of it.
+  if (vl==vr) {
+    printf("INVALID EDGE\n");
+    return false;
+  }
+
+  // One-rings of v0 and v1 cannot intersect, otherwise we'll collapse a
+  // triangle-shaped tunnel
+  Hashtable<VertexId> covered;
+  for (auto oh: topo->outgoing(v0)) {
+    auto v = topo->dst(oh);
+    if (v != vl && v != vr)
+      covered.set(v);
+  }
+  for (auto oh: topo->outgoing(v1)) {
+    auto v = topo->dst(oh);
+    if (covered.contains(v)) {
+      printf("ONE-RINGS of V0 and V1 INTERSECT\n");
+      return false;
+    }
+  }
+
+  return true;
 }
 
 Mesh quick_cleanup_mesh(Mesh mesh) {
@@ -388,8 +439,10 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
           // printf("AFTER n-VERTS %d ALLOC VERTS %d\n", topo->n_vertices(), topo->allocated_vertices());
           is_changed = true;
           break;
-        } else
-          printf("UNABLE TO COLLAPSE %d %d->%d\n", (int)e, (int)src, (int)dst);
+        } else {
+          printf("UNABLE TO COLLAPSE %d %d->%d: ", (int)e, (int)src, (int)dst);
+          report_unsafe_collapse(topo, e);
+        }
       }
     }
   } while (is_changed == true);
@@ -408,10 +461,10 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
   printf("COLLECTING GARBAGE\n");
   // topo->dump_internals();
   auto new_mesh = topo_to_mesh(topo, field);
-  // auto dec_mesh = decimate_mesh(new_mesh);
   // printf("DECIMATING MESH\n");
   // RawField<TV3,VertexId> rawfield(field);
-  // decimate_inplace(topo, rawfield, 0.0001, 0.0001, 0, 0);
+  // do_decimate_inplace(topo, rawfield, 0.01, 0.01, 0, 0);
+  // auto dec_mesh = decimate_mesh(new_mesh);
   // write_mesh("tst1.stl", new_mesh.soup, new_mesh.points);
   // auto dec_mesh = simplify_mesh(new_mesh);
   auto dec_mesh = new_mesh;
@@ -425,8 +478,11 @@ Mesh quick_cleanup_mesh(Mesh mesh) {
   auto final_mesh = unified_mesh;
   */
   report_simplify_mesh(final_mesh);
+  printf("--- GC CLEANUP\n");
+  auto gcd_mesh = gc_mesh(final_mesh);
+  report_simplify_mesh(gcd_mesh);
   printf("--- END CLEANUP\n");
-  return gc_mesh(final_mesh);
+  return gcd_mesh;
   // return unified_mesh;
   // auto new_soup = topo->face_soup().x;
   // return gc_mesh(Mesh(const_soup(new_soup), pos));
@@ -442,15 +498,17 @@ Mesh simplify_mesh(Mesh mesh) {
   for (auto face : mesh.soup->elements)
     topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
   // ImproveOptions options(1.1,0.1,0.1);
-  ImproveOptions options(1.1,0.01,0.01);
+  // ImproveOptions options(1.1,0.01,0.01);
   // ImproveOptions options(1.0000001,0.0000001,0.0000001);
+  ImproveOptions options(1e-6,1e-6,1e-6);
   improve_mesh_inplace(topo, field, options);
+  auto final_mesh = topo_to_mesh(topo, field);
   // printf("BEFORE GC %d\n", field.size());
-  return topo_to_mesh(topo, field);
+  return final_mesh;
 }
 
 Mesh cleanup_mesh (Mesh mesh) {
-  if (false)
+  if (true)
     return simplify_mesh(mesh);
   else
     return quick_cleanup_mesh(mesh);
@@ -1312,10 +1370,12 @@ Nested<TV2> offset_poly(int n, T rad, Nested<TV2> poly) {
 Nested<TV2> offset_polyline(int n, T rad, Nested<TV2> polyline) {
   Nested<TV2> res = none_poly();
   for (auto line : polyline) {
-    for (auto pt : line) 
+    for (auto pt : line) {
       res = union_add(res, fat_dot(n, rad, pt));
-    for (int i = 0; i < (line.size()-1); i++) 
+    }
+    for (int i = 0; i < (line.size()-1); i++) {
       res = union_add(res, fat_edge(n, rad, line[i], line[(i+1)%line.size()]));
+    }
   }
   return res;
 }

@@ -448,7 +448,6 @@ Geom* g_array_v3i (std::vector<Geom*> args) {
 Geom* g_array_v2d (std::vector<Geom*> args) {
   Array< TV2 > points;
   for (auto arg : args) {
-    printf("ADDING: ");  g_pretty_print(arg);
     points.append(g_v2d_val(arg));
   }
   return new ArrayV2dGeom(points);
@@ -540,6 +539,13 @@ Geom* g_sub(Geom* a, Geom* b) {
     return g_v2d(g_v2d_val(a) - g_v2d_val(b));
   else {
     error("Bad args for sub"); return NULL;
+  }
+}
+Geom* g_dither(Geom* g) { 
+  if (g->k == mesh_kind)
+    return new MeshGeom(dither_mesh(g_mesh_val(g), 1e-16));
+  else {
+    error("Bad args for dither"); return NULL;
   }
 }
 Geom* do_g_mul(Matrix<T,4> m, Geom* g, bool is_invert = false) { 
@@ -732,14 +738,14 @@ Geom* g_not(Geom* a) {
   }
 }
 Geom* g_offset(Geom* a, Geom* g) {
-  if (g->k == mesh_kind)
+  if (g->k == mesh_kind) {
     // return new MeshGeom(offset_mesh(1, g_num_val(a), g_mesh_val(g)));
     return new MeshGeom(offset_mesh(g_num_val(a), g_mesh_val(g)));
-  else if (g->k == nested_v2d_kind)
-    return g_nested_v2d(offset_polyline(16, g_num_val(a), g_poly_val(g)));
-  else if (is_poly(g))
+  } else if (g->k == nested_v2d_kind) {
+    return g_poly(offset_polyline(16, g_num_val(a), g_nested_v2d_val(g)));
+  } else if (is_poly(g)) {
     return g_poly(offset_poly(16, g_num_val(a), g_poly_val(g)));
-  else {
+  } else {
     error("Bad args for offset"); return NULL;
   }
 }

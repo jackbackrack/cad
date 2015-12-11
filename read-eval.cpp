@@ -278,6 +278,8 @@ Geom* parse_factor(Tokenizer& s) {
             return g_thicken(args[0], args[1]);
           } else if (tok1.sym == "offset") {
             return g_offset(args[0], args[1]);
+          } else if (tok1.sym == "dither") {
+            return g_dither(args[0]);
           } else if (tok1.sym == "hollow") {
             g = g_hollow(args[0], args[1]);
           } else if (tok1.sym == "rot") {
