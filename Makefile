@@ -33,17 +33,29 @@ hull.o: cad.h hull.h hull.cpp
 iso-surface.o: cad.h iso-surface.h iso-surface.cpp
 	clang++ -c $(FLAGS) $(INCS) iso-surface.cpp
 
-geom.o: cad.h geom.h geom.cpp
+geom.o: cad.h geom.h geom.cpp geom-interface.h
 	clang++ -c $(FLAGS) $(INCS) geom.cpp
 
-read-eval.o: cad.h geom.h read-eval.h read-eval.cpp
+expr.o: cad.h expr.h expr.cpp geom-interface.h
+	clang++ -c $(FLAGS) $(INCS) expr.cpp
+
+expr_stub.o: 
+	clang++ -c $(FLAGS) $(INCS) expr_stub.cpp
+
+path.o: cad.h path.h path.cpp
+	clang++ -c $(FLAGS) $(INCS) path.cpp
+
+octree.o: cad.h expr.h octree.h octree.cpp
+	clang++ -c $(FLAGS) $(INCS) octree.cpp
+
+read-eval.o: cad.h geom.h read-eval.h read-eval.cpp expr.h
 	clang++ -c $(FLAGS) $(INCS) read-eval.cpp
 
 app.o: cad.h app.h read-eval.h app.cpp
 	clang++ -c $(FLAGS) $(INCS) app.cpp
 
-cad: cad.o hull.o iso-surface.o geom.o read-eval.o app.o 
-	clang++ -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o geom.o read-eval.o app.o $(LIBS)
+cad: cad.o hull.o iso-surface.o geom.o read-eval.o app.o expr.o octree.o path.o
+	clang++ -march=native -g -fPIC -o cad $^ $(LIBS)
 
-cad.a: cad.o hull.o iso-surface.o geom.o
+cad.a: cad.o hull.o iso-surface.o geom.o octree.o expr.o path.o expr_stub.o
 	ar -v -r -u cad.a $^

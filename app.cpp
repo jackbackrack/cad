@@ -1,5 +1,6 @@
-#include "app.h"
+#include "cad.h"
 #include "read-eval.h"
+#include "app.h"
 
 sim_t* sim = NULL;
 
@@ -11,12 +12,16 @@ defboolprop(is_show_status, false);
 defboolprop(is_show_lines, true);
 defboolprop(is_stdin_expr, false);
 defboolprop(is_show_normals, false);
-defboolprop(is_interpolating, false);
+defboolprop(is_epsilon_target, true);
+defboolprop(is_interpolating, true);
 defboolprop(is_timing, false);
 defnumpropmod(flo, radius,     8,   0.1,  0.0, 1000.0); 
 defnumpropmod(flo, threshold,  0.1, 0.01, 0.0, 1.0); 
 defnumpropmod(int, num_points, 10000, 100, 1, 1000000000); 
 defstrprop(expr,  "cube(4.0) - xmov(2.5,cube(2.0))"); 
+
+flo_t get_radius (void) { return radius; }
+flo_t get_threshold (void) { return threshold; }
 
 int sim_viz_t::exec (int is_pause) {
   sim->exec();
@@ -89,6 +94,7 @@ static int install_props (void) {
   props->install(is_interpolating_var);
   props->install(is_show_lines_var);
   props->install(is_show_normals_var);
+  props->install(is_epsilon_target_var);
   props->install(radius_var);
   props->install(threshold_var);
   props->install(num_points_var);

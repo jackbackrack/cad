@@ -1,0 +1,49 @@
+#include("geom-lslib.lstanza")
+#include("jitbot.stanza")
+
+defstruct Transformation :
+  mov: V3d
+  rot: V3d
+
+defn assemble-chair (polygons:Streamable<Polygon>, transformations:Streamable<Transformation>, thickness:Float) :
+  var res = none3()
+  for (i in 0 to false, polygon in polygons, trans in transformations) do :
+    val part = extrude(num(thickness), polygon)
+    save(str(string-join(["orig-part" i ".stl"])), part)
+    ;; println-all(["TRANS MOV " mov(trans) " ROT " rot(trans)])
+    val tran-part = mov(mov(trans), rot(rot(trans), part))
+    save(str(string-join(["tran-part" i ".stl"])), tran-part)
+    res = res | tran-part
+    save(str(string-join(["parts" i ".stl"])), res)
+  res
+
+;; defn seat-transformations (t:Float) :
+;;   [Transformation(vec(0.0,0.0,5.0 - t), vec( 00.0, 00.0, 0.0)),
+;;    Transformation(vec(t,  0.0,3.5),     vec( 00.0,-90.0, 0.0)),
+;;    Transformation(vec(0.0,  t,0.0),     vec( 90.0, 00.0, 0.0)),
+;;    Transformation(vec(0.0,5.0,0.0),     vec( 90.0, 00.0, 0.0))]
+;; 
+;; defn seat-polygons () :
+;;   val seat = polygon([vec(0.0,0.0),vec(5.0,0.0),vec(5.0,5.0),vec(0.0,5.0)])
+;;   val back = polygon([vec(0.0,0.0),vec(8.5,0.0),vec(8.5,5.0),vec(0.0,5.0)])
+;;   val side_a = polygon(
+;;     [vec(0.0,0.0),vec(1.0,0.0),vec(1.0,3.5),vec(4.0,3.5),
+;;      vec(4.0,0.0),vec(5.0,0.0),vec(5.0,5.0),vec(0.0,5.0)])
+;;   val side_b = polygon(
+;;     [vec(0.0,0.0),vec(1.0,0.0),vec(1.0,3.5),vec(4.0,3.5),
+;;      vec(4.0,0.0),vec(5.0,0.0),vec(5.0,5.0),vec(0.0,5.0)])
+;;   [seat, back, side_a, side_b]
+
+defn seat-transformations (t:Float) :
+  [Transformation(vec( 0.0, 0.0,0.0), vec( 00.0, 00.0, 0.0)), ;; seat
+   Transformation(vec(-5.0, 0.0,5.0), vec( 00.0,-90.0, 0.0)), ;; back
+   Transformation(vec( 0.0, 5.0,0.0), vec( 90.0, 00.0, 0.0)),
+   Transformation(vec( 0.0,-5.0,0.0), vec( 90.0, 00.0, 0.0))]
+
+defn seat-polygons () :
+  val seat = square(num(10.0))
+  val back = square(num(10.0))
+  val side = thicken(num(1.5), polyline2([[vec(-5.0,-10.0), vec(-5.0,10.0)],[vec(-5.0,0.0),vec(5.0,0.0),vec(5.0,-10.0)]]))
+  [seat, back, side, side]
+
+save(str("chair.stl"), assemble-chair(seat-polygons(), seat-transformations(1.0), 1.5))
