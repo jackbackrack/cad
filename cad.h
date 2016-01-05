@@ -7,8 +7,14 @@
 #include <geode/vector/Matrix4x4.h>
 #include <geode/vector/Rotation.h>
 #include <geode/geometry/platonic.h>
-#include <geode/geometry/BoxVector.h>
 #include <geode/geometry/Triangle3d.h>
+#include <geode/geometry/polygon.h>
+#include <geode/geometry/offset_mesh.h>
+#include <geode/exact/mesh_csg.h>
+// #include <geode/exact/delaunay.h>
+#include <geode/exact/polygon_csg.h>
+#include <geode/mesh/SegmentSoup.h>
+#include <geode/mesh/TriangleTopology.h>
 
 #include <cstdio>
 #include <math.h>
@@ -37,6 +43,86 @@ typedef Vector<int,2> IV2;
 typedef Vector<int,3> IV3;
 typedef Vector<int,4> IV4;
 // typedef Tuple<Ref<const TriangleSoup>, Array<TV3>> Mesh;
+
+// cons compatibility
+typedef Triangle<TV3> Tri;
+typedef T flo_t;
+typedef TV3 V3d;
+typedef TV3 Vec;
+
+inline Tri tri (TV3 p0, TV3 p1, TV3 p2) { return Triangle<TV3>(p0, p1, p2); }
+
+const T INFTY = (T)INFINITY;
+
+extern Vec rnd_vec_of (const Vec &lo, const Vec &hi);
+extern Vec rnd_vec_of (const flo_t lo, const flo_t hi);
+
+class Interval {
+ public:
+  flo_t lo;
+  flo_t hi;
+  inline bool operator <  (Interval o) { return hi < o.lo; }
+  inline bool operator <= (Interval o) { return hi <= o.lo; }
+  inline bool operator >  (Interval o) { return lo > o.hi; }
+  inline bool operator >= (Interval o) { return lo >= o.hi; }
+ Interval(void) : lo(0.0), hi(0.0) /*, Geom(geom_interval_kind) */ { }
+ Interval(flo_t lo, flo_t hi) : lo(lo), hi(hi) /*, Geom(geom_interval_kind) */ { }
+};
+
+inline Interval interval(flo_t lo, flo_t hi) {
+  const Interval res(lo, hi); return res;
+}
+
+class Boxy {
+ public:
+  Vec lo;
+  Vec hi;
+  inline Vec center( void ) const { return (lo + hi)*0.5; }
+  inline Vec rnd_vec( void ) const { return rnd_vec_of(lo, hi); }
+  inline Vec dims (void) const { return vec(hi.x - lo.x, hi.y - lo.y, hi.z - lo.z); }
+  inline bool is_inside (const Vec &p) const {
+    return lo.x < p.x && lo.y < p.y && lo.z < p.z &&
+           p.x < hi.x && p.y < hi.y && p.z < hi.z;
+  }
+  inline bool is_overlap (const Boxy &b) const { 
+    for (int i = 0; i < 3; i++)
+      if (b.hi[i] < lo[i] || b.lo[i] > hi[i])
+        return false;
+    return true;
+  }
+ Boxy(Vec lo, Vec hi) : lo(lo), hi(hi) /*, Geom(geom_box_kind) */ { }
+};
+
+inline Boxy box(Vec lo, Vec hi)  {
+  const Boxy res(lo, hi); return res;
+}
+inline Boxy add(Boxy a, Boxy b)  {
+  return box(vec(min(a.lo.x, b.lo.x), min(a.lo.y, b.lo.y), min(a.lo.z, b.lo.z)),
+             vec(max(a.hi.x, b.hi.x), max(a.hi.y, b.hi.y), max(a.hi.z, b.hi.z)));
+}
+inline Boxy add(Boxy b, Vec p)  {
+  return box(vec(min(b.lo.x, p.x), min(b.lo.y, p.y), min(b.lo.z, p.z)),
+             vec(max(b.hi.x, p.x), max(b.hi.y, p.y), max(b.hi.z, p.z)));
+}
+
+inline Segment<TV3> segment(TV3 from, TV3 to) {
+  Segment<TV3> res(from, to); return res;
+}
+inline Segment<TV2> segment(TV2 from, TV2 to) {
+  Segment<TV2> res(from, to); return res;
+}
+
+inline TV3 get_color(TV3 n) {
+  return vec((n.x > 0.0 ? n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0),
+             (n.y > 0.0 ? n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0),
+             (n.z > 0.0 ? n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0));
+}
+
+// std::string to_str(TV3 v) { return "vec(" + std::to_string(v.x) + "," + std::to_string(v.y) + "," + std::to_string(v.z) + ")"; }
+// std::string to_str(Segment<TV3> l) { return "LineSegment(" + to_str(l.x0) + "," + to_str(l.x1) + ")"; }
+// std::string to_str(Line<TV3> l) { return "Line(" + to_str(l.pos) + "," + to_str(l.dir) + ")"; }
+// std::string to_str(Triangle<TV3> t) { return "tri(" + to_str(t.p0) + "," + to_str(t.p1) + "," + to_str(t.p2) ")"; }
+
 struct Mesh {
 public:
   Ref<const TriangleSoup> soup;
@@ -147,6 +233,7 @@ extern Nested<TV2> star_poly(T rad_min, T rad_max, int n);
 
 
 extern Mesh triangulate (Nested<TV3> poly);
+extern Mesh triangulate (Nested<TV2> poly);
 
 extern TV3 mul(Matrix<T,4> m, TV3 pt);
 
@@ -218,6 +305,12 @@ extern Nested<TV2> stroke_text (std::string txt);
       
 extern Mesh dither_mesh(Mesh mesh, double delta);
 
+extern Mesh fab_mesh (Array<IV3> faces, Array<TV3> points);
+
 extern void init_cad ( void );
+
+inline T degrees_to_radians (T d) {
+  return d * M_PI / 180.0;
+}
 
 #endif

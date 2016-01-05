@@ -1,0 +1,63 @@
+#include("geom-lslib.lstanza")
+#include("jitbot.stanza")
+
+defn edge-connector (len:Float, inner:Float, outer:Float, p0:V3d, p1:V3d) -> Mesh :
+  val shape = extrude(num(len),       circle(num(outer)))
+  val hole  = extrude(num(len + 0.1), circle(num(inner)))
+  val v     = p1 - p0
+  val nv    = normalize(v)
+  val end   = num(len) * nv
+  val conn  = mov(num(0.5) * end, rot(vec(0.0,0.0,1.0), nv, shape - hole))
+  conn
+
+defn fat-vertex (len:Float, inner:Float, outer:Float, base:V3d, nbrs:Streamable<V3d>) -> Mesh :
+  reduce(bit-or, none3(), stream(edge-connector{len, inner, outer, base, _}, nbrs))
+
+defn all-fat-vertices (len:Float, inner:Float, outer:Float, pts:List<V3d>) :
+  generate<Mesh> :
+    for i in 0 to length(pts) do :
+      val pt = pts[i]
+      val nbrs = generate<V3d> :
+        for j in 0 to length(pts) do :
+          if j != i :
+            yield(pts[j])
+      yield(mov(pt, fat-vertex(len, inner, outer, pt, nbrs)))
+
+defn mesh-fat-vertices (len:Float, inner:Float, outer:Float, verts:List<V3d>, tris:List<V3i>) :
+  generate<Mesh> :
+    for i in 0 to length(verts) do :
+      val pt = verts[i]
+      val nbrs = HashTable< Int, True|False >({ _ });
+      for tri in tris do :
+        for j in 0 to 3 do :
+          if elt(tri, j) == i :
+            nbrs[elt(tri, (j + 1) % 3)] = true
+      yield(mov(pt, fat-vertex(len, inner, outer, pt, stream({verts[_]}, keys(nbrs)))))
+
+defn mesh-fat-vertices (len:Float, inner:Float, outer:Float, mesh:Mesh) :
+  mesh-fat-vertices(len, inner, outer, to-list(points(mesh)), to-list(faces(mesh)))
+
+;;  val points = points(mesh)
+;;  val faces  = edges(mesh)
+  
+;; println(num(1.0))
+;; println(vec(1.0, 2.0))
+;; println(arrayV2d([vec(-1.0,-1.0)]))
+;; save(str("c1.stl"), edge-connector(4.0, 0.1, 0.5, vec(0.0,0.0,0.0), vec(8.0, 0.0, 0.0)))
+;; save(str("c2.stl"), edge-connector(4.0, 0.1, 0.5, vec(4.0,0.0,0.0), vec(12.0, 0.0, 0.0)))
+;; save(str("c3.stl"), fat-vertex(2.0, 0.1, 0.5, vec(-4.0,-4.0,0.0), [vec(0.0, 0.0, 4.0), vec(4.0, -4.0, 0.0), vec(0.0, 4.0, 0.0)]))
+;; defn tri-points (l:Float) :
+;;   val d = 1.0 / sqrt(2.0)
+;;   to-list([vec(neg(l),0.0,neg(l) * d),vec(l,0.0,neg(l) * d),vec(0.0,neg(l),l * d),vec(0.0,l,l * d)])
+;; val tri-verts = all-fat-vertices(10.0, 1.5, 3.0, tri-points(30.0))
+;; save(str("stl/tri-verts.stl"), reduce(bit-or, none3(), tri-verts))
+val cube-verts = mesh-fat-vertices(15.0, 3.5, 8.0, cube(num(50.0)))
+;; ;; val cube-points = to-list([vec(-4.0,-4.0,-4.0),vec(-4.0, 4.0,-4.0),vec( 4.0,-4.0,-4.0),vec( 4.0, 4.0,-4.0), vec(-4.0,-4.0, 4.0),vec(-4.0, 4.0, 4.0),vec( 4.0,-4.0, 4.0),vec( 4.0, 4.0, 4.0)])
+;; ;; val cube-verts = all-fat-vertices(2.0, 0.1, 0.5, cube-points)
+var i = 0
+for vert in cube-verts do :
+  save(str(string-join(["stl/cube-vert-" i ".stl"])), vert)
+  i = i + 1
+
+;; save(str("stl/cube-verts.stl"), reduce(bit-or, none3(), cube-verts))
+

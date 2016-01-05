@@ -1,0 +1,320 @@
+;; TODO:
+;; INFIX OPS
+
+defn print-list-infix (o:OutputStream, name:String, s:Streamable) :
+  var first? = true
+  for e in s do :
+    if first?: first? = false else: print-all(o, [" " name " "])
+    print(o, e)
+
+defn do-print-list (o:OutputStream, name:String, s:Streamable, do-print:(OutputStream, ?) -> False) :
+  print-all(o, [name "("])
+  var first? = true
+  for e in s do :
+    if first?: first? = false else: print(o, ", ")
+    do-print(o, e)
+  print(o, ")")
+
+defn print-list (o:OutputStream, name:String, s:Streamable) :
+  do-print-list(o, name, s, print)
+
+defn print-list-list (o:OutputStream, outer:String, inner:String, s:Streamable<Streamable>) :
+  do-print-list(o, outer, s, print-list{_, inner, _})
+
+definterface Exp
+
+defstruct Op <: Exp :
+  name: String
+  args: Streamable<ExpT>
+  infix?: True|False
+
+defmethod print (o:OutputStream, e:Op) :
+  if infix?(e):
+    print-list-infix(o, name(e), args(e))
+  else :
+    print-list(o, name(e), args(e))
+
+definterface ExpT
+defmulti exp<?T> (t:?T&ExpT) -> Exp
+
+defstruct NumT <: ExpT :
+  exp: Exp with: (as-method => true)
+defstruct StrT <: ExpT :
+  exp: Exp with: (as-method => true)
+defstruct Vec2T <: ExpT :
+  exp: Exp with: (as-method => true)
+defstruct Vec3T <: ExpT :
+  exp: Exp with: (as-method => true)
+defstruct MatT <: ExpT :
+  exp: Exp with: (as-method => true)
+
+definterface Geom2T <: ExpT
+definterface Geom3T <: Geom2T
+
+defstruct PolygonT <: Geom2T :
+  exp: Exp with: (as-method => true)
+defstruct PolylineT <: Geom3T :
+  exp: Exp with: (as-method => true)
+defstruct MeshT <: Geom3T :
+  exp: Exp with: (as-method => true)
+
+defn pprint (a:PolygonT) -> PolygonT :
+  PolygonT(Op("pprint", [a], false))
+defn bit-or (a:PolygonT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("|", [a, b], true))
+defn bit-and (a:PolygonT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("&", [a, b], true))
+defn minus (a:PolygonT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("\\", [a, b], true))
+defn times (a:MatT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("*", [a, b], true))
+defn mag (a:Vec2T, b:PolygonT) -> PolygonT :
+  PolygonT(Op("mag", [a, b], false))
+defn mag1 (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("mag1", [a, b], false))
+defn xmag (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("xmag", [a, b], false))
+defn ymag (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("ymag", [a, b], false))
+defn mov (a:Vec2T, b:PolygonT) -> PolygonT :
+  PolygonT(Op("mov", [a, b], false))
+defn xmov (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("xmov", [a, b], false))
+defn ymov (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("ymov", [a, b], false))
+defn rot (a:Vec2T, b:PolygonT) -> PolygonT :
+  PolygonT(Op("rot", [a, b], false))
+defn xrot (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("xrot", [a, b], false))
+defn yrot (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("yrot", [a, b], false))
+defn extrude (a:NumT, b:PolygonT) -> MeshT :
+  MeshT(Op("extrude", [a, b], false))
+defn revolve (p:PolygonT) -> MeshT :
+  MeshT(Op("revolve", [p], false))
+defn offset (a:NumT, b:PolygonT) -> PolygonT :
+  PolygonT(Op("offset", [a, b], false))
+
+defn pprint (a:PolylineT) -> PolylineT :
+  PolylineT(Op("pprint", [a], false))
+defn times (a:MatT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("*", [a, b], true))
+defn mag (a:Vec3T, b:PolylineT) -> PolylineT :
+  PolylineT(Op("mag", [a, b], false))
+defn mag1 (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("mag1", [a, b], false))
+defn xmag (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("xmag", [a, b], false))
+defn ymag (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("ymag", [a, b], false))
+defn zmag (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("zmag", [a, b], false))
+defn mov (a:Vec3T, b:PolylineT) -> PolylineT :
+  PolylineT(Op("mov", [a, b], false))
+defn xmov (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("xmov", [a, b], false))
+defn ymov (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("ymov", [a, b], false))
+defn zmov (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("zmov", [a, b], false))
+defn rot (a:Vec3T, b:PolylineT) -> PolylineT :
+  PolylineT(Op("rot", [a, b], false))
+defn xrot (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("xrot", [a, b], false))
+defn yrot (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("yrot", [a, b], false))
+defn zrot (a:NumT, b:PolylineT) -> PolylineT :
+  PolylineT(Op("zrot", [a, b], false))
+defn offset (a:NumT, b:PolylineT) -> PolygonT :
+  PolygonT(Op("offset", [a, b], false))
+
+defn pprint (a:MeshT) -> MeshT :
+  MeshT(Op("pprint", [a], false))
+defn bit-or (a:MeshT, b:MeshT) -> MeshT :
+  MeshT(Op("|", [a, b], true))
+defn bit-and (a:MeshT, b:MeshT) -> MeshT :
+  MeshT(Op("&", [a, b], true))
+defn minus (a:MeshT, b:MeshT) -> MeshT :
+  MeshT(Op("\\", [a, b], true))
+defn times (a:MatT, b:MeshT) -> MeshT :
+  MeshT(Op("*", [a, b], true))
+defn mag (a:Vec3T, b:MeshT) -> MeshT :
+  MeshT(Op("mag", [a, b], false))
+defn mag1 (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("mag1", [a, b], false))
+defn xmag (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("xmag", [a, b], false))
+defn ymag (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("ymag", [a, b], false))
+defn zmag (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("zmag", [a, b], false))
+defn mov (a:Vec3T, b:MeshT) -> MeshT :
+  MeshT(Op("mov", [a, b], false))
+defn xmov (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("xmov", [a, b], false))
+defn ymov (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("ymov", [a, b], false))
+defn zmov (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("zmov", [a, b], false))
+defn rot (a:Vec3T, b:MeshT) -> MeshT :
+  MeshT(Op("rot", [a, b], false))
+defn xrot (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("xrot", [a, b], false))
+defn yrot (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("yrot", [a, b], false))
+defn zrot (a:NumT, b:MeshT) -> MeshT :
+  MeshT(Op("zrot", [a, b], false))
+defn slice (a:NumT, b:MeshT) -> PolygonT :
+  PolygonT(Op("slice", [a, b], false))
+
+defmethod print (o:OutputStream, t:ExpT) :
+  print(o, exp(t))
+
+defstruct NumE <: Exp :
+  x: Float
+defn num (x:Float) -> NumT : NumT(NumE(x))
+defn num (x:Int) -> NumT : num(to-float(x))
+
+defmethod print (o:OutputStream, e:NumE) :
+  print(o, x(e))
+
+defn letter (a:StrT) -> PolylineT :
+  PolylineT(Op("letter", [a], false))
+
+defn text (a:StrT) -> PolylineT :
+  PolylineT(Op("text", [a], false))
+
+defn circle (r:NumT) -> PolygonT :
+  PolygonT(Op("circle", [r], false))
+
+defn square (r:NumT) -> PolygonT :
+  PolygonT(Op("square", [r], false))
+
+defn sphere (r:NumT) -> MeshT :
+  MeshT(Op("sphere", [r], false))
+
+defn cube (r:NumT) -> MeshT :
+  MeshT(Op("square", [r], false))
+
+defn load (s:StrT) -> MeshT :
+  MeshT(Op("load", [s], false))
+
+defn save (s:StrT, m:MeshT) -> MeshT :
+  MeshT(Op("save", [s, m], false))
+
+defstruct StrE <: Exp :
+  x: String
+defn Str (x:String) -> StrT : StrT(StrE(x))
+
+defmethod print (o:OutputStream, e:StrE) :
+  print(o, x(e))
+
+defstruct Vec2E <: Exp :
+  x: NumT
+  y: NumT
+
+defn vec (x:NumT,y:NumT) -> Vec2T : Vec2T(Vec2E(x,y))
+defn vec (x:Float,y:Float) -> Vec2T : vec(num(x),num(y))
+
+defmethod print (o:OutputStream, e:Vec2E) :
+  print-all(o, ["vec(" x(e) "," y(e) ")"])
+
+defstruct Vec3E <: Exp :
+  x: NumT
+  y: NumT
+  z: NumT
+
+defn vec (x:NumT,y:NumT,z:NumT) -> Vec3T : Vec3T(Vec3E(x,y,z))
+defn vec (x:Float,y:Float,z:Float) -> Vec3T : vec(num(x),num(y),num(z))
+
+defmethod print (o:OutputStream, e:Vec3E) :
+  print-all(o, ["vec(" x(e) "," y(e) "," z(e) ")"])
+
+defstruct MatE <: Exp :
+  elts: Streamable<NumT>
+
+defn mat (elts:Streamable<NumT>) -> MatT : MatT(MatE(elts))
+
+defmethod print (o:OutputStream, e:MatE) :
+  print-list(o, "mat", elts(e))
+
+defstruct PolylineE <: Exp :
+  elts: Streamable<Streamable<Vec3T>>
+
+defn polyline (elts:Streamable<Streamable<Vec3T>>) -> PolylineT : PolylineT(PolylineE(elts))
+
+defmethod print (o:OutputStream, e:PolylineE) :
+  print-list-list(o, "polyline", "line3", elts(e))
+
+defstruct PolygonE <: Exp :
+  elts: Streamable<Streamable<Vec2T>>
+
+defn polygon (elts:Streamable<Streamable<Vec2T>>) -> PolygonT : PolygonT(PolygonE(elts))
+defn polygon (elts:Streamable<Vec2T>) -> PolygonT : polygon(list(elts))
+
+defmethod print (o:OutputStream, e:PolygonE) :
+  print-list-list(o, "polygon", "contour", elts(e))
+
+defstruct MeshE <: Exp :
+  faces: Streamable<Vec3T>
+  vertices: Streamable<Vec3T>
+
+defn mesh (faces:Streamable<Vec3T>,vertices:Streamable<Vec3T>) -> MeshT :
+  MeshT(MeshE(faces, vertices))
+
+defmethod print (o:OutputStream, e:MeshE) :
+  print(o, "Mesh(")
+  print-list(o, "faces", faces(e))
+  print(o, ", ")
+  print-list(o, "vertices", vertices(e))
+  print(o, ")")
+
+val pi = 3.1415
+
+defn star (n:Int, rmin:Float, rmax:Float) -> PolygonT :
+  val points = generate<Vec2T> :
+    for i in 0 to 2 * n do :
+      val a = (2.0 * pi * to-float(i)) / (2.0 * to-float(n))
+      val r = if i % 2 == 0 : rmax else : rmin
+      yield(vec(num(r * cos(a)), num(r * sin(a))))
+  polygon(points)
+
+;; println(union(circle(num(1.0)),square(num(2.0))))
+;; println(polygon([[vec(-1.0,-1.0),vec(0.0,1.0),vec(1.0,-1.0)]]))
+;; println(square(num(1.0)) | circle(num(1.5)))
+;; println(extrude(num(16.0),square(num(2)) - square(num(1))))
+println(extrude(num(10), star(7, 3.0, 5.0) - circle(num(2))))
+
+definterface GeomContainer<T>
+defmulti elts<?T> (c:GeomContainer<?T>) -> Array<T>
+
+defclass Joint
+defmulti name (j:Joint) -> String
+defmulti pose (j:Joint) -> Mat
+defmulti limits (j:Joint) -> Tuple(Float, Float)
+
+definterface Layer <: GeomContainer<Geometry>
+defmulti color (l:Layer)
+
+definterface Block <: GeomContainer<Layer>
+defmulti pose (b:Block) -> Mat
+
+definterface Layout<T> <: GeomContainer<T&Block>
+defmulti solved<?T> (l:T?&Layout) -> T
+
+definterface Body <: Block
+defmulti joints (b:Body)
+
+deftype Constraint String
+
+defstruct JointRef :
+  mechanism: Mechanism
+  body: Body
+  joint: Joint
+
+definterface Mechanism <: Layout<Body>
+defmulti connections (m:Mechanism) -> Array<JointRef>
+defmulti state (m:Mechanism) -> Array<Float>
+defmulti constraints (m:Mechanism) -> Array<Constraint>
+defmulti children (m:Mechanism) -> Array<Mechanism>
+
