@@ -4,11 +4,13 @@ COMMON_LIBS = $(GUI)/app.a -lportaudio -lopencv_core -lopencv_highgui -lopencv_v
 COMMON_INCS = -I/usr/local/include/OpenEXR -I. -I/usr/local/include -I$(GUI)
 OS2 := $(strip $(shell uname))
 ifeq ($(OS2), Darwin)
+  C++ := clang++
   FLAGS = $(COMMON_FLAGS) -DMACOSX
   LIBS = $(COMMON_LIBS) -framework GLUT -framework OpenGL -lgeode
   INCS = $(COMMON_INCS) -I/System/Library/Frameworks/Python.framework/Versions/2.7/include/python2.7 -I/System/Library/Frameworks/Python.framework/Versions/2.7/Extras/lib/python/numpy/core/include -I. -Ibuild/native/release
   DEFS = -DMACOSX
 else
+  C++ := g++
   OS := $(strip $(shell uname -o))
   ifeq ($(OS), GNU/Linux)
     FLAGS = $(COMMON_FLAGS)
@@ -25,25 +27,25 @@ clean:
 	rm -f *.o cad
 
 cad.o: cad.h cad.cpp
-	clang++ -c $(FLAGS) $(INCS) cad.cpp
+	$(C++) -c $(FLAGS) $(INCS) cad.cpp
 
 hull.o: cad.h hull.h hull.cpp
-	clang++ -c $(FLAGS) $(INCS) hull.cpp
+	$(C++) -c $(FLAGS) $(INCS) hull.cpp
 
 iso-surface.o: cad.h iso-surface.h iso-surface.cpp
-	clang++ -c $(FLAGS) $(INCS) iso-surface.cpp
+	$(C++) -c $(FLAGS) $(INCS) iso-surface.cpp
 
 geom.o: cad.h geom.h geom.cpp
-	clang++ -c $(FLAGS) $(INCS) geom.cpp
+	$(C++) -c $(FLAGS) $(INCS) geom.cpp
 
 read-eval.o: cad.h geom.h read-eval.h read-eval.cpp
-	clang++ -c $(FLAGS) $(INCS) read-eval.cpp
+	$(C++) -c $(FLAGS) $(INCS) read-eval.cpp
 
 app.o: cad.h app.h read-eval.h app.cpp
-	clang++ -c $(FLAGS) $(INCS) app.cpp
+	$(C++) -c $(FLAGS) $(INCS) app.cpp
 
 cad: cad.o hull.o iso-surface.o geom.o read-eval.o app.o 
-	clang++ -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o geom.o read-eval.o app.o $(LIBS)
+	$(C++) -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o geom.o read-eval.o app.o $(LIBS)
 
 cad.a: cad.o hull.o iso-surface.o geom.o
 	ar -v -r -u cad.a $^
