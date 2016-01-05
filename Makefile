@@ -56,8 +56,8 @@ read-eval.o: cad.h geom.h read-eval.h read-eval.cpp expr.h
 app.o: cad.h app.h read-eval.h app.cpp
 	$(C++) -c $(FLAGS) $(INCS) app.cpp
 
-cad: cad.o hull.o iso-surface.o geom.o read-eval.o app.o 
-	$(C++) -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o geom.o read-eval.o app.o $(LIBS)
+cad: cad.o hull.o iso-surface.o octree.o expr.o path.o geom.o read-eval.o app.o 
+	$(C++) -march=native -g -fPIC -o cad cad.o hull.o iso-surface.o octree.o expr.o path.o geom.o read-eval.o app.o $(LIBS)
 
 cad.a: cad.o hull.o iso-surface.o geom.o octree.o expr.o path.o expr_stub.o
 	ar -v -r -u cad.a $^
