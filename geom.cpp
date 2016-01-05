@@ -404,6 +404,10 @@ Geom* g_pretty_print(Geom* g) {
     pretty_print_nested_v3d(g_nested_v3d_val(g));
   else if (g->k == mesh_kind)
     pretty_print_mesh(g_mesh_val(g));
+  else if (g->k == octree_kind)
+    pretty_print_tree(g_octree_val(g));
+  else if (g->k == expr_kind)
+    pretty_print_expr(g_expr_val(g));
   return g;
 }
 
@@ -489,11 +493,26 @@ Geom* g_poly (std::vector<Geom*> args) {
 Geom* g_pi(void) { return new NumGeom(M_PI); }
 Geom* g_none2(void) { return new PolyGeom(none_poly()); }
 Geom* g_all2(void) { return new PolyGeom(all_poly()); }
-Geom* g_none(void) { return new MeshGeom(none_mesh()); }
-Geom* g_all(void) { return new MeshGeom(all_mesh()); }
-Geom* g_circle(Geom* a) { return new PolyGeom(circle_poly(g_num_val(a), 16)); }
-Geom* g_square(Geom* a) { return new PolyGeom(square_poly(g_num_val(a))); }
-Geom* g_square_lo_hi(Geom* lo, Geom* hi) { return new PolyGeom(square_poly(g_v2d_val(lo), g_v2d_val(hi))); }
+Geom* g_none3(void) { return new MeshGeom(none_mesh()); }
+Geom* g_all3(void) { return new MeshGeom(all_mesh()); }
+Geom* g_circle(Geom* a) {
+  if (a->k == expr_kind)
+    return expr_circle(g_expr_val(a));
+  else 
+    return new PolyGeom(circle_poly(g_num_val(a), 16));
+}
+Geom* g_square(Geom* a) {
+  if (a->k == expr_kind)
+    return expr_square(g_expr_val(a));
+  else 
+    return new PolyGeom(square_poly(g_num_val(a)));
+}
+Geom* g_square_lo_hi(Geom* lo, Geom* hi) {
+  if (lo->k == expr_kind && hi->k == expr_kind)
+    return expr_rect2(g_expr_val(lo), g_expr_val(hi));
+  else 
+    return new PolyGeom(square_poly(g_v2d_val(lo), g_v2d_val(hi)));
+}
 Geom* g_letter(Geom* a) {
   char c = g_string_val(a)[0];
   auto ol = stroke_char(c);
@@ -522,6 +541,8 @@ Geom* g_elt(Geom* g, Geom* i) {
 Geom* g_add(Geom* a, Geom* b) {
   if (a->k == num_kind && b->k == num_kind)
     return g_num(g_num_val(a) + g_num_val(b));
+  else if (a->k == expr_kind && b->k == expr_kind)
+    return expr_add(g_expr_val(a), g_expr_val(b));
   else if (a->k == v3d_kind && b->k == v3d_kind)
     return g_v3d(g_v3d_val(a) + g_v3d_val(b));
   else if (a->k == v2d_kind && b->k == v2d_kind)
@@ -533,6 +554,8 @@ Geom* g_add(Geom* a, Geom* b) {
 Geom* g_sub(Geom* a, Geom* b) {
   if (a->k == num_kind && b->k == num_kind)
     return g_num(g_num_val(a) - g_num_val(b));
+  else if (a->k == expr_kind && b->k == expr_kind)
+    return expr_sub(g_expr_val(a), g_expr_val(b));
   else if (a->k == v3d_kind && b->k == v3d_kind)
     return g_v3d(g_v3d_val(a) - g_v3d_val(b));
   else if (a->k == v2d_kind && b->k == v2d_kind)
@@ -568,6 +591,8 @@ Geom* do_g_mul(Matrix<T,4> m, Geom* g, bool is_invert = false) {
 Geom* g_mul(Geom* a, Geom* b) { 
   if (a->k == mat_kind)
     return do_g_mul(g_mat_val(a), b);
+  else if (a->k == expr_kind && b->k == expr_kind)
+    return expr_mul(g_expr_val(a), g_expr_val(b));
   else if (a->k == num_kind && b->k == num_kind)
     return g_num(g_num_val(a) * g_num_val(b));
   else if (a->k == num_kind && b->k == v3d_kind)
@@ -620,6 +645,8 @@ Geom* g_dot(Geom* a, Geom* b) {
 Geom* g_div(Geom* a, Geom* b) { 
   if (a->k == num_kind && b->k == num_kind)
     return g_num(g_num_val(a) * g_num_val(b));
+  else if (a->k == expr_kind && b->k == expr_kind)
+    return expr_div(g_expr_val(a), g_expr_val(b));
   else if (a->k == v3d_kind && b->k == num_kind)
     return g_v3d(g_v3d_val(a) / g_num_val(b));
   else if (a->k == v2d_kind && b->k == num_kind)
@@ -632,35 +659,51 @@ Geom* g_mag(Geom* v, Geom* g) {
   return do_g_mul(scale_matrix(g_v3d_val(v)), g);
 }
 Geom* g_mag1(Geom* a, Geom* g) { 
-  return do_g_mul(scale_matrix(vec(g_num_val(a), g_num_val(a), g_num_val(a))), g);
+  if (a->k == expr_kind && g->k == expr_kind)
+    return expr_mag1(g_expr_val(a), g_expr_val(g));
+  else
+    return do_g_mul(scale_matrix(vec(g_num_val(a), g_num_val(a), g_num_val(a))), g);
 }
 Geom* g_xmag(Geom* a, Geom* g) { 
-  return do_g_mul(scale_matrix(vec(g_num_val(a), 1.0, 1.0)), g);
+  if (a->k == expr_kind && g->k == expr_kind)
+    return expr_xmag(g_expr_val(a), g_expr_val(g));
+  else
+    return do_g_mul(scale_matrix(vec(g_num_val(a), 1.0, 1.0)), g);
 }
 Geom* g_ymag(Geom* a, Geom* g) { 
-  return do_g_mul(scale_matrix(vec(1.0, g_num_val(a), 1.0)), g);
+  if (a->k == expr_kind && g->k == expr_kind)
+    return expr_ymag(g_expr_val(a), g_expr_val(g));
+  else
+    return do_g_mul(scale_matrix(vec(1.0, g_num_val(a), 1.0)), g);
 }
 Geom* g_zmag(Geom* a, Geom* g) { 
-  return do_g_mul(scale_matrix(vec(1.0, 1.0, g_num_val(a))), g);
+  if (a->k == expr_kind && g->k == expr_kind)
+    return expr_zmag(g_expr_val(a), g_expr_val(g));
+  else
+    return do_g_mul(scale_matrix(vec(1.0, 1.0, g_num_val(a))), g);
 }
 Geom* g_mov(Geom* v, Geom* g) {
   return do_g_mul(translation_matrix(g_v3d_val(v)), g);
 }
 Geom* g_xmov(Geom* a, Geom* g) {
-  return do_g_mul(translation_matrix(vec(g_num_val(a), 0.0, 0.0)), g);
+  if (a->k == expr_kind && g->k == expr_kind)
+    return expr_xmov(g_expr_val(a), g_expr_val(g));
+  else
+    return do_g_mul(translation_matrix(vec(g_num_val(a), 0.0, 0.0)), g);
 }
 Geom* g_ymov(Geom* a, Geom* g) {
-  return do_g_mul(translation_matrix(vec(0.0, g_num_val(a), 0.0)), g);
+  if (a->k == expr_kind && g->k == expr_kind)
+    return expr_ymov(g_expr_val(a), g_expr_val(g));
+  else
+    return do_g_mul(translation_matrix(vec(0.0, g_num_val(a), 0.0)), g);
 }
 Geom* g_zmov(Geom* a, Geom* g) {
-  return do_g_mul(translation_matrix(vec(0.0, 0.0, g_num_val(a))), g);
-}
-inline T degrees_to_radians (T d) {
-  return d * M_PI / 180.0;
+  if (a->k == expr_kind && g->k == expr_kind)
+    return expr_zmov(g_expr_val(a), g_expr_val(g));
+  else
+    return do_g_mul(translation_matrix(vec(0.0, 0.0, g_num_val(a))), g);
 }
 Geom* g_rot(Geom* v, Geom* g) {
-  printf("ROT: ");
-  g_pretty_print(v);
   TV3 rv = g_v3d_val(v);
   TV3 av = vec(degrees_to_radians(rv.x), degrees_to_radians(rv.y), degrees_to_radians(rv.z));
   return do_g_mul(rotation_matrix(av), g);
@@ -669,41 +712,73 @@ Geom* g_rot_from_to(Geom* from, Geom* to, Geom* g) {
   return do_g_mul(rotation_matrix(g_v3d_val(from), g_v3d_val(to)), g);
 }
 Geom* g_xrot(Geom* d, Geom* g) {
-  T a = degrees_to_radians(g_num_val(d));
-  T c=cos(a),s=sin(a);
-  return do_g_mul(Matrix<T,4>(1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1), g);
+  if (d->k == expr_kind && g->k == expr_kind)
+    return expr_xrot(g_expr_val(d), g_expr_val(g));
+  else {
+    T a = degrees_to_radians(g_num_val(d));
+    T c=cos(a),s=sin(a);
+    return do_g_mul(Matrix<T,4>(1,0,0,0,0,c,s,0,0,-s,c,0,0,0,0,1), g);
+  }
 }
 Geom* g_yrot(Geom* d, Geom* g) {
-  T a = degrees_to_radians(g_num_val(d));
-  T c=cos(a),s=sin(a);
-  return do_g_mul(Matrix<T,4>(c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1), g);
+  if (d->k == expr_kind && g->k == expr_kind)
+    return expr_yrot(g_expr_val(d), g_expr_val(g));
+  else {
+    T a = degrees_to_radians(g_num_val(d));
+    T c=cos(a),s=sin(a);
+    return do_g_mul(Matrix<T,4>(c,0,-s,0,0,1,0,0,s,0,c,0,0,0,0,1), g);
+  }
 }
 Geom* g_zrot(Geom* d, Geom* g) {
-  T a = degrees_to_radians(g_num_val(d));
-  T c=cos(a),s=sin(a);
-  return do_g_mul(Matrix<T,4>(c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1), g);
+  if (d->k == expr_kind && g->k == expr_kind)
+    return expr_zrot(g_expr_val(d), g_expr_val(g));
+  else {
+    T a = degrees_to_radians(g_num_val(d));
+    T c=cos(a),s=sin(a);
+    return do_g_mul(Matrix<T,4>(c,s,0,0,-s,c,0,0,0,0,1,0,0,0,0,1), g);
+  }
 }
 Geom* g_reflect_x(Geom* g) {
-  return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1), g, true);
+  if (g->k == expr_kind)
+    return expr_reflect_x(g_expr_val(g));
+  else 
+    return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1), g, true);
 }
 Geom* g_reflect_y(Geom* g) { 
-  return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, true);
+  if (g->k == expr_kind)
+    return expr_reflect_y(g_expr_val(g));
+  else 
+    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, true);
 }
 Geom* g_reflect_xy(Geom* g) {
-  return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, false); // TODO: NORMALS BROKEN FOR POLYS
+  if (g->k == expr_kind)
+    return expr_reflect_xy(g_expr_val(g));
+  else 
+    return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,-1,0,0, 0,0,1,0, 0,0,0,1), g, false); // TODO: NORMALS BROKEN FOR POLYS
 }
 Geom* g_reflect_z(Geom* g) {
-  return do_g_mul(Matrix<T,4>(1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, true);
+  if (g->k == expr_kind)
+    return expr_reflect_z(g_expr_val(g));
+  else 
+    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, true);
 }
 Geom* g_reflect_yz(Geom* g) {
-  return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,-1,0,0,0,0,1), g, false);
+  if (g->k == expr_kind)
+    return expr_reflect_yz(g_expr_val(g));
+  else 
+    return do_g_mul(Matrix<T,4>(1,0,0,0, 0,-1,0,0, 0,0,-1,0,0,0,0,1), g, false);
 }
 Geom* g_reflect_xz(Geom* g) {
-  return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, false);
+  if (g->k == expr_kind)
+    return expr_reflect_xz(g_expr_val(g));
+  else 
+    return do_g_mul(Matrix<T,4>(-1,0,0,0, 0,1,0,0, 0,0,-1,0, 0,0,0,1), g, false);
 }
 Geom* g_union(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)
     return new MeshGeom(union_add(g_mesh_val(a), g_mesh_val(b)));
+  else if (a->k == expr_kind && b->k == expr_kind)
+    return expr_or(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
     return new PolyGeom(union_add(g_poly_val(a), g_poly_val(b)));
   else {
@@ -713,6 +788,8 @@ Geom* g_union(Geom* a, Geom* b) {
 Geom* g_intersection(Geom* a, Geom* b) { 
   if (a->k == mesh_kind && b->k == mesh_kind)
     return new MeshGeom(intersection(g_mesh_val(a), g_mesh_val(b)));
+  else if (a->k == expr_kind && b->k == expr_kind)
+    return expr_and(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
     return new PolyGeom(intersection(g_poly_val(a), g_poly_val(b)));
   else {
@@ -722,6 +799,8 @@ Geom* g_intersection(Geom* a, Geom* b) {
 Geom* g_difference(Geom* a, Geom* b) {
   if (a->k == mesh_kind && b->k == mesh_kind)
     return new MeshGeom(difference(g_mesh_val(a), g_mesh_val(b)));
+  else if (a->k == expr_kind && b->k == expr_kind)
+    return expr_rem(g_expr_val(a), g_expr_val(b));
   else if (is_poly(a) && is_poly(b))
     return g_poly(difference(g_poly_val(a), g_poly_val(b)));
   else {
@@ -731,6 +810,8 @@ Geom* g_difference(Geom* a, Geom* b) {
 Geom* g_not(Geom* a) {
   if (a->k == mesh_kind)
     return new MeshGeom(invert_mesh(g_mesh_val(a)));
+  else if (a->k == expr_kind)
+    return expr_not(g_expr_val(a));
   else if (is_poly(a))
     return g_poly(invert_poly(g_poly_val(a)));
   else {
@@ -741,6 +822,8 @@ Geom* g_offset(Geom* a, Geom* g) {
   if (g->k == mesh_kind) {
     // return new MeshGeom(offset_mesh(1, g_num_val(a), g_mesh_val(g)));
     return new MeshGeom(offset_mesh(g_num_val(a), g_mesh_val(g)));
+  } else if (a->k == expr_kind && g->k == expr_kind) {
+    return expr_sub(g_expr_val(g), g_expr_val(a));
   } else if (g->k == nested_v2d_kind) {
     return g_poly(offset_polyline(16, g_num_val(a), g_nested_v2d_val(g)));
   } else if (is_poly(g)) {
@@ -752,8 +835,21 @@ Geom* g_offset(Geom* a, Geom* g) {
 Geom* g_hollow(Geom* a, Geom* m) { return g_difference(m, g_offset(g_num(-g_num_val(a)), m)); }
 Geom* g_simplify(Geom* g) { return new MeshGeom(simplify_mesh(g_mesh_val(g))); }
 Geom* g_cleanup(Geom* g) { return new MeshGeom(cleanup_mesh(g_mesh_val(g))); }
-Geom* g_slice(Geom* a, Geom* g) { return new PolyGeom(slice(g_num_val(a), g_mesh_val(g))); }
-Geom* g_extrude(Geom* a, Geom* p) { return new MeshGeom(extrude(g_num_val(a), g_poly_val(p))); }
+extern flo_t get_radius(void), get_threshold(void);
+Geom* g_slice(Geom* a, Geom* g) {
+  if (a->k == num_kind && g->k == octree_kind) {
+    return new PolyGeom(tree_slice(g_octree_val(g), g_num_val(a)));
+  } else if (a->k == num_kind && g->k == expr_kind) {
+    return new PolyGeom(tree_slice(expr_to_tree(g_expr_val(g), get_radius(), get_threshold()), g_num_val(a)));
+  } else 
+    return new PolyGeom(slice(g_num_val(a), g_mesh_val(g)));
+}
+Geom* g_extrude(Geom* a, Geom* p) {
+  if (a->k == expr_kind && p->k == expr_kind)
+    return expr_extrude(g_expr_val(a), g_expr_val(p));
+  else 
+    return new MeshGeom(extrude(g_num_val(a), g_poly_val(p)));
+}
 Geom* g_thicken(Geom* a, Geom* l) {
   if (is_nested_v2d(l))
     return new PolyGeom(thicken(1, g_num_val(a), g_nested_v2d_val(l)));
@@ -761,11 +857,34 @@ Geom* g_thicken(Geom* a, Geom* l) {
     return new MeshGeom(thicken(1, g_num_val(a), g_nested_v3d_val(l)));
 }
 
-Geom* g_sphere(Geom* a) { return new MeshGeom(sphere_mesh(1, vec(0.0, 0.0, 0.0), g_num_val(a))); }
-Geom* g_cube(Geom* a) { auto r = g_num_val(a); return new MeshGeom(cube_mesh(vec(-r, -r, -r), vec(r, r, r))); }
-Geom* g_cube_lo_hi(Geom* lo, Geom* hi) { return new MeshGeom(cube_mesh(g_v3d_val(lo), g_v3d_val(hi))); }
-Geom* g_cone(Geom* a, Geom* p) { return new MeshGeom(cone_mesh(g_num_val(a), g_poly_val(p))); }
-Geom* g_revolve(Geom* p) { return new MeshGeom(revolve(16, g_poly_val(p))); }
+Geom* g_sphere(Geom* a) {
+  if (a->k == expr_kind)
+    return expr_sphere(g_expr_val(a));
+  else
+    return new MeshGeom(sphere_mesh(1, vec(0.0, 0.0, 0.0), 0.5 * g_num_val(a)));
+}
+Geom* g_cube(Geom* a) {
+  if (a->k == expr_kind)
+    return expr_cube(g_expr_val(a));
+  else {
+    auto d = g_num_val(a); auto r = 0.5 * d; return new MeshGeom(cube_mesh(vec(-r, -r, -r), vec(r, r, r)));
+  }
+}
+Geom* g_cube_lo_hi(Geom* lo, Geom* hi) {
+  return new MeshGeom(cube_mesh(g_v3d_val(lo), g_v3d_val(hi)));
+}
+Geom* g_cone(Geom* a, Geom* p) {
+  if (a->k == expr_kind && p->k == expr_kind)
+    return expr_cone(g_expr_val(a), g_expr_val(p));
+  else 
+    return new MeshGeom(cone_mesh(g_num_val(a), g_poly_val(p)));
+}
+Geom* g_revolve(Geom* p) {
+  if (p->k == expr_kind)
+    return expr_xrevolve(g_expr_val(p));
+  else 
+    return new MeshGeom(revolve(16, g_poly_val(p)));
+}
 Geom* g_hull(Geom* g) {
   if (g->k == mesh_kind)
     return new MeshGeom(quick_hull_mesh(g_mesh_val(g)));
@@ -777,5 +896,161 @@ Geom* g_hull(Geom* g) {
 }
 // Geom* g_shear_x_z(Geom* z0, Geom* z1, Geom* dx0, Geom* dx1, Geom* m) {
 //   return new MeshGeom(shear_x_z(g_num_val(z0), g_num_val(z1), g_num_val(dx0), g_num_val(dx1), g_mesh(m))); }
-Geom* g_taper(Geom* l, Geom* r0, Geom* r1, Geom* p) {
-  return new MeshGeom(taper_mesh(g_num_val(l), g_num_val(r0), g_num_val(r1), g_poly_val(p))); }
+
+Geom* g_expr(Geom* g) {
+  if (g->k == num_kind) {
+    return expr_lit(g_num_val(g));
+  } else if (g->k == poly_kind) {
+    auto polygon = g_poly_val(g);
+    return polygonize(polygon);
+  } else if (g->k == mesh_kind) {
+    auto mesh = g_mesh_val(g);
+    return expr_mesh(mesh);
+  } else {
+    error("INCOMPATIBLE EXPR ARG");
+    return NULL;
+  } 
+}
+
+Geom* g_lit(flo_t a) { return expr_lit(a); }
+Geom* g_x(void) { return expr_x(); }
+Geom* g_y(void) { return expr_y(); }
+Geom* g_z(void) { return expr_z(); }
+Geom* g_neg(Geom* g) {
+  if (g->k == num_kind)
+    return g_num(-g_num_val(g));
+  else 
+    return expr_neg(g_expr_val(g));
+}
+Geom* g_min (Geom* a, Geom* b) {
+  if (a->k == num_kind && b->k == num_kind)
+    return g_num(min(g_num_val(a), g_num_val(b)));
+  else 
+    return expr_min(g_expr_val(a), g_expr_val(b));
+}
+Geom* g_max (Geom* a, Geom* b) {
+  if (a->k == num_kind && b->k == num_kind)
+    return g_num(max(g_num_val(a), g_num_val(b)));
+  else 
+    return expr_max(g_expr_val(a), g_expr_val(b));
+}
+Geom* g_pow(Geom* a, Geom* b) {
+  if (a->k == num_kind && b->k == num_kind)
+    return g_num(pow(g_num_val(a), g_num_val(b)));
+  else 
+    return expr_pow(g_expr_val(a), g_expr_val(b));
+}
+Geom* g_sqr(Geom* a) {
+  if (a->k == num_kind)
+    return g_num(g_num_val(a) * g_num_val(a));
+  else 
+    return expr_sqr(g_expr_val(a));
+}
+Geom* g_abs(Geom* a) {
+  if (a->k == num_kind)
+    return g_num(abs(g_num_val(a)));
+  else 
+    return expr_abs(g_expr_val(a));
+}
+Geom* g_sqrt(Geom* a) {
+  if (a->k == num_kind)
+    return g_num(sqrt(g_num_val(a)));
+  else 
+    return expr_sqrt(g_expr_val(a));
+}
+Geom* g_sin(Geom* g) {
+  if (g->k == num_kind)
+    return g_num(sin(g_num_val(g)));
+  else 
+    return expr_sin(g_expr_val(g));
+}
+Geom* g_cos(Geom* g) {
+  if (g->k == num_kind)
+    return g_num(cos(g_num_val(g)));
+  else 
+    return expr_cos(g_expr_val(g));
+}
+Geom* g_tan(Geom* a) {
+  if (a->k == num_kind)
+    return g_num(tan(g_num_val(a)));
+  else 
+    return expr_tan(g_expr_val(a));
+}
+Geom* g_asin(Geom* g) {
+  if (g->k == num_kind)
+    return g_num(asin(g_num_val(g)));
+  else 
+    return expr_asin(g_expr_val(g));
+}
+Geom* g_acos(Geom* g) {
+  if (g->k == num_kind)
+    return g_num(acos(g_num_val(g)));
+  else 
+    return expr_acos(g_expr_val(g));
+}
+Geom* g_atan(Geom* a) {
+  if (a->k == num_kind)
+    return g_num(atan(g_num_val(a)));
+  else 
+    return expr_atan(g_expr_val(a));
+}
+Geom* g_xform(Geom* nx, Geom* ny, Geom* nz, Geom* g) {
+  return expr_xform(g_expr_val(nx), g_expr_val(ny), g_expr_val(nz), g_expr_val(g)); }
+Geom* g_half(Geom* nx, Geom* ny, Geom* nz, Geom* d) {
+  return expr_half(g_expr_val(nx), g_expr_val(ny), g_expr_val(nz), g_expr_val(d)); }
+Geom* g_pyramid(Geom* xyd, Geom* zd) {
+  return expr_pyramid(g_expr_val(xyd), g_expr_val(zd)); }
+Geom* g_blend(Geom* a, Geom* b, Geom* c) { return expr_blend(g_expr_val(a), g_expr_val(b), g_expr_val(c)); }
+Geom* g_shear(Geom* a, Geom* b, Geom* c, Geom* d, Geom* e) {
+  return expr_shear_x_z(g_expr_val(a), g_expr_val(b), g_expr_val(c), g_expr_val(d), g_expr_val(e)); }
+Geom* g_taper(Geom* dz, Geom* s0, Geom* s1, Geom* g) {
+  // TODO: RECONCILE TWO
+  if (g->k == expr_kind)
+    return expr_taper(g_expr_val(dz), g_expr_val(s0), g_expr_val(s1), g_expr_val(g)); 
+  else
+    return new MeshGeom(taper_mesh(g_num_val(dz), g_num_val(s0), g_num_val(s1), g_poly_val(g)));
+}
+Geom* g_edge(Geom* x0, Geom* y0, Geom* x1, Geom* y1) {
+  return expr_edge(g_expr_val(x0), g_expr_val(y0), g_expr_val(x1), g_expr_val(y1)); }
+Geom* g_triangle(Geom* x0, Geom* y0, Geom* x1, Geom* y1, Geom* x2, Geom* y2) {
+  return expr_triangle(g_expr_val(x0), g_expr_val(y0), g_expr_val(x1), g_expr_val(y1), g_expr_val(x2), g_expr_val(y2)); }
+Geom* g_cylinder(Geom* xyd, Geom* zd) { return expr_cylinder(g_expr_val(xyd), g_expr_val(zd)); }
+Geom* g_capsule(Geom* xyd, Geom* zd) { return expr_capsule(g_expr_val(xyd), g_expr_val(zd)); }
+
+Geom* g_space(Geom* d) { return expr_space(g_expr_val(d)); }
+Geom* g_xbox(Geom* a, Geom* b) { return expr_xbox(g_expr_val(a), g_expr_val(b)); }
+Geom* g_ybox(Geom* a, Geom* b) { return expr_ybox(g_expr_val(a), g_expr_val(b)); }
+Geom* g_zbox(Geom* a, Geom* b) { return expr_zbox(g_expr_val(a), g_expr_val(b)); }
+Geom* g_align_xmin(Geom* a, Geom* b) { return expr_align_xmin(g_expr_val(a), g_expr_val(b)); }
+Geom* g_align_ymin(Geom* a, Geom* b) { return expr_align_ymin(g_expr_val(a), g_expr_val(b)); }
+Geom* g_align_zmin(Geom* a, Geom* b) { return expr_align_zmin(g_expr_val(a), g_expr_val(b)); }
+Geom* g_align_xmax(Geom* a, Geom* b) { return expr_align_xmax(g_expr_val(a), g_expr_val(b)); }
+Geom* g_align_ymax(Geom* a, Geom* b) { return expr_align_ymax(g_expr_val(a), g_expr_val(b)); }
+Geom* g_align_zmax(Geom* a, Geom* b) { return expr_align_zmax(g_expr_val(a), g_expr_val(b)); }
+
+Geom* g_to_tree(Geom* g, Geom* rad, Geom* thresh) {
+  if (g->k == expr_kind) {
+    return (Geom*)(expr_to_tree(g_expr_val(g), g_num_val(rad), g_num_val(thresh)));
+  } else {
+    error("INCOMPATIBLE TREE ARG");
+    return NULL;
+  }
+}
+
+Geom* g_to_mesh(Geom* g) {
+  if (g->k == octree_kind) {
+    return new MeshGeom(octree_to_mesh(g_octree_val(g)));
+  } else if (g->k == expr_kind) {
+    return new MeshGeom(octree_to_mesh(expr_to_tree(g_expr_val(g), get_radius(), get_threshold())));
+  } else {
+    error("INCOMPATIBLE MESH ARG");
+    return NULL;
+  } 
+}
+
+Expr* g_expr_val(Geom* g) {
+  ensure(g->k == expr_kind, "EXPECTING EXPR KIND");
+  return ((Expr*)g);
+}
+
+

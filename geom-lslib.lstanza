@@ -131,10 +131,10 @@ externfn g_none2 : () -> ptr<?>
 defn g-none2 () -> ref<Ptr> : return ref<Ptr>(callc(g_none2))
 externfn g_all2 : () -> ptr<?>
 defn g-all2 () -> ref<Ptr> : return ref<Ptr>(callc(g_all2))
-externfn g_none : () -> ptr<?>
-defn g-none () -> ref<Ptr> : return ref<Ptr>(callc(g_none))
-externfn g_all : () -> ptr<?>
-defn g-all () -> ref<Ptr> : return ref<Ptr>(callc(g_all))
+externfn g_none3 : () -> ptr<?>
+defn g-none3 () -> ref<Ptr> : return ref<Ptr>(callc(g_none3))
+externfn g_all3 : () -> ptr<?>
+defn g-all3 () -> ref<Ptr> : return ref<Ptr>(callc(g_all3))
 externfn g_circle : (ptr<?>) -> ptr<?>
 defn g-circle (a:ref<Ptr>) -> ref<Ptr> : return ref<Ptr>(callc(g_circle, a.value))
 externfn g_square : (ptr<?>) -> ptr<?>

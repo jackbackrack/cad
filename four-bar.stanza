@@ -1,0 +1,29 @@
+#include("geom-lslib.lstanza")
+#include("jitbot.stanza")
+
+defn bar (depth:Float, d:Float, len:Float, left:Float, right:Float) :
+  val off   = 0.5 * len
+  val rad   = 0.5 * d
+  val holes = xmov(num(neg(off)), circle(num(left))) | xmov(num(off), circle(num(right)))
+  extrude(num(depth), offset(num(rad), polyline2([v2d(neg(off), 0.0), v2d(off, 0.0)])) - holes)
+
+defn cap (depth:Float, inner:Float, outer:Float) :
+  extrude(num(depth), circle(num(outer)) - circle(num(inner)))
+
+defn four-bar (depth:Float, outer-d:Float, small-d:Float, big-d:Float, lb:Float, bb:Float, tb:Float, rb:Float) :
+  val bbar  = bar(depth, outer-d, bb, big-d,   big-d)
+  val lbar  = bar(depth, outer-d, lb, small-d, small-d)
+  val rbar  = bar(depth, outer-d, rb, small-d, small-d)
+  val tbar  = bar(depth, outer-d, tb, big-d,   big-d)
+  val lbcap = cap(depth, small-d, outer-d)
+  val rbcap = cap(depth, small-d, outer-d)
+  val ltcap = cap(depth, small-d, outer-d)
+  val rtcap = cap(depth, small-d, outer-d)
+  [bbar, rbar, lbar, tbar, lbcap, rbcap, ltcap, rtcap]
+
+val fb-parts = four-bar(5.0, 10.0, 3.0, 4.5, 20.0, 40.0, 60.0, 60.0)
+var j = 0
+for part in fb-parts do :
+  save(str(string-join(["stl/fb-part-" j ".stl"])), part)
+  j = j + 1
+

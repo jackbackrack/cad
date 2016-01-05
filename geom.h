@@ -1,38 +1,9 @@
 #ifndef __IS_GEOM__
 #define __IS_GEOM__
 
-enum GeomKind {
-  args_kind,
-  num_kind,
-  string_kind,
-  v2d_kind,
-  v3d_kind,
-  v3i_kind,
-  mat_kind,
-  array_v2d_kind,
-  array_v3d_kind,
-  array_v3i_kind,
-  nested_v2d_kind,
-  nested_v3d_kind,
-  poly_kind,
-  mesh_kind };
-
-class Geom;
-
-typedef Geom* (*zero_geom_op_t)(void);
-typedef Geom* (*unary_geom_op_t)(Geom*);
-typedef Geom* (*binary_geom_op_t)(Geom*, Geom*);
-typedef Geom* (*triple_geom_op_t)(Geom*, Geom*, Geom*);
-typedef Geom* (*quad_geom_op_t)(Geom*, Geom*, Geom*, Geom*);
-typedef Geom* (*quint_geom_op_t)(Geom*, Geom*, Geom*, Geom*, Geom*);
-typedef Geom* (*hex_geom_op_t)(Geom*, Geom*, Geom*, Geom*, Geom*, Geom*);
-typedef Geom* (*seven_geom_op_t)(Geom*, Geom*, Geom*, Geom*, Geom*, Geom*, Geom*);
-
-class Geom {
- public:
-  GeomKind k;
- Geom(GeomKind k) : k(k) { }
-};
+#include "geom-interface.h"
+#include "expr.h"
+#include "octree.h"
 
 class ArgsGeom : public Geom {
  public:
@@ -193,8 +164,8 @@ extern "C" Geom* g_pretty_print(Geom* g);
 extern "C" Geom* g_pi(void);
 extern "C" Geom* g_none2(void);
 extern "C" Geom* g_all2(void);
-extern "C" Geom* g_none(void);
-extern "C" Geom* g_all(void);
+extern "C" Geom* g_none3(void);
+extern "C" Geom* g_all3(void);
 extern "C" Geom* g_circle(Geom* a);
 extern "C" Geom* g_square(Geom* a);
 extern "C" Geom* g_square_lo_hi(Geom* lo, Geom* hi);
@@ -248,6 +219,8 @@ extern "C" Geom* g_cone(Geom* a, Geom* p);
 extern "C" Geom* g_revolve(Geom* p);
 extern "C" Geom* g_hull(Geom* m);
 extern "C" Geom* g_taper(Geom* l, Geom* r0, Geom* r1, Geom* p);
+extern "C" Geom* g_to_mesh(Geom* g);
+extern "C" Geom* g_to_tree(Geom* g, Geom* rad, Geom* thresh);
 
 extern std::vector<Geom*> g_args_val(Geom* g);
 extern Geom* g_num(T a);
@@ -294,5 +267,49 @@ extern Geom* g_mesh(Mesh mesh);
 extern Mesh g_mesh_val(Geom* g);
 extern std::string g_to_str_val(Geom* g);
 
+/// EXPR GEOMS
+
+extern Geom* g_to_expr(Geom* g);
+extern Expr* g_expr_val(Geom* g);
+extern Geom* g_expr(Geom* g);
+extern Geom* g_lit(flo_t a);
+extern Geom* g_x(void);
+extern Geom* g_y(void);
+extern Geom* g_z(void);
+extern Geom* g_neg(Geom* g);
+extern Geom* g_min (Geom* a, Geom* b);
+extern Geom* g_or (Geom* a, Geom* b);
+extern Geom* g_max (Geom* a, Geom* b);
+extern Geom* g_and (Geom* a, Geom* b);
+extern Geom* g_pow(Geom* a, Geom* b);
+extern Geom* g_sqr(Geom* a);
+extern Geom* g_abs(Geom* a);
+extern Geom* g_sqrt(Geom* a);
+extern Geom* g_sin(Geom* g);
+extern Geom* g_cos(Geom* g);
+extern Geom* g_tan(Geom* a);
+extern Geom* g_asin(Geom* g);
+extern Geom* g_acos(Geom* g);
+extern Geom* g_atan(Geom* a);
+extern Geom* g_xform(Geom* nx, Geom* ny, Geom* nz, Geom* g);
+extern Geom* g_half(Geom* nx, Geom* ny, Geom* nz, Geom* d);
+extern Geom* g_edge(Geom* x0, Geom* y0, Geom* x1, Geom* y1);
+extern Geom* g_triangle(Geom* x0, Geom* y0, Geom* x1, Geom* y1, Geom* x2, Geom* y2);
+extern Geom* g_cylinder(Geom* r, Geom* lo, Geom* hi);
+extern Geom* g_capsule(Geom* r, Geom* lo, Geom* hi);
+extern Geom* g_pyramid(Geom* xyd, Geom* zd);
+extern Geom* g_shear(Geom* a, Geom* b, Geom* c, Geom* d, Geom* e);
+extern Geom* g_blend(Geom* a, Geom* b, Geom* c);
+
+extern Geom* g_space(Geom* r);
+extern Geom* g_xbox(Geom* a, Geom* b);
+extern Geom* g_ybox(Geom* a, Geom* b);
+extern Geom* g_zbox(Geom* a, Geom* b);
+extern Geom* g_align_xmin(Geom* a, Geom* b);
+extern Geom* g_align_ymin(Geom* a, Geom* b);
+extern Geom* g_align_zmin(Geom* a, Geom* b);
+extern Geom* g_align_xmax(Geom* a, Geom* b);
+extern Geom* g_align_ymax(Geom* a, Geom* b);
+extern Geom* g_align_zmax(Geom* a, Geom* b);
 
 #endif

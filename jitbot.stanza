@@ -296,7 +296,7 @@ public defn mesh (points:Streamable<V3d>, faces:Streamable<V3i>) :
 defmethod print (o:OutputStream, g:Mesh) :
   print-all(o ["Mesh(" points(g) "," faces(g) ")"])
 
-public defn none3 () -> Mesh : Mesh(($do-prim ls g-none))
+public defn none3 () -> Mesh : Mesh(($do-prim ls g-none3))
 
 public defn plus (a:V2d, b:V2d) -> V2d :
   val pa = ptr(a)

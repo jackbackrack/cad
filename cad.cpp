@@ -1,12 +1,4 @@
 #include "cad.h"
-#include <geode/geometry/Triangle3d.h>
-#include <geode/geometry/polygon.h>
-#include <geode/geometry/offset_mesh.h>
-#include <geode/exact/mesh_csg.h>
-// #include <geode/exact/delaunay.h>
-#include <geode/exact/polygon_csg.h>
-#include <geode/mesh/SegmentSoup.h>
-#include <geode/mesh/TriangleTopology.h>
 #include <geode/mesh/improve_mesh.h>
 // #include <geode/mesh/decimate.h>
 #include <fstream>
@@ -18,6 +10,14 @@ double rndd () {
 
 double rndd (double mn, double mx) {
   return rndd() * (mx-mn) + mn;
+}
+
+Vec rnd_vec_of (const Vec &lo, const Vec &hi) { 
+  return vec(rndd(lo.x,hi.x), rndd(lo.y,hi.y), rndd(lo.z,hi.z));
+}
+
+Vec rnd_vec_of (const flo_t lo, const flo_t hi) { 
+  return vec(rndd(lo,hi), rndd(lo,hi), rndd(lo,hi));
 }
 
 void error (std::string msg) {
@@ -284,6 +284,18 @@ Mesh gc_mesh(Mesh mesh) {
   return fab_mesh(new_faces, new_points);
 }
 
+Nested<TV3> nested2_to_nested3 (Nested<TV2> contours2) {
+  Nested<TV3, false> contours3;
+  for (auto c : contours2) {
+    Array<TV3> contour3;
+    for (auto p : c) 
+      contour3.append(vec(p.x, p.y, 0.0));
+    contours3.append(contour3);
+  }
+  contours3.freeze();
+  return contours3;
+}
+
 Mesh topo_to_mesh (Ref<MutableTriangleTopology> topo, const Field<TV3,VertexId>& field) {
   auto updates = topo->collect_garbage();
   int i = 0, tot = 0;
@@ -500,7 +512,7 @@ Mesh simplify_mesh(Mesh mesh) {
   // ImproveOptions options(1.1,0.1,0.1);
   // ImproveOptions options(1.1,0.01,0.01);
   // ImproveOptions options(1.0000001,0.0000001,0.0000001);
-  ImproveOptions options(1e-6,1e-6,1e-6);
+  ImproveOptions options(1 + 1e-6,1e-6,1e-6);
   improve_mesh_inplace(topo, field, options);
   auto final_mesh = topo_to_mesh(topo, field);
   // printf("BEFORE GC %d\n", field.size());
@@ -508,10 +520,11 @@ Mesh simplify_mesh(Mesh mesh) {
 }
 
 Mesh cleanup_mesh (Mesh mesh) {
-  if (true)
+  if (true) {
     return simplify_mesh(mesh);
-  else
+  } else {
     return quick_cleanup_mesh(mesh);
+  }
 }
 
 // invert triangle soup so normals point inwards
@@ -992,7 +1005,8 @@ Nested<TV2> square_poly(TV2 min, TV2 max) {
   return array_to_nested(pts);
 }
 
-Nested<TV2> square_poly(T rad) {
+Nested<TV2> square_poly(T diam) {
+  auto rad = 0.5 * diam;
   return square_poly(vec(-rad,-rad), vec(rad,rad));
 }
 
@@ -1006,7 +1020,8 @@ Nested<TV2> none_poly(void) {
   return res;
 }
 
-Nested<TV2> circle_poly(T rad, int n) {
+Nested<TV2> circle_poly(T diam, int n) {
+  auto rad = 0.5 * diam;
   Array<Vector<real, 2>> pts;
   for (int i = n-1; i >= 0; i--) {
     T a = (2 * M_PI * i) / n;
@@ -1096,6 +1111,10 @@ Mesh triangulate (Nested<TV3> poly) {
     faces.append(vec(mesh.indices[i*3], mesh.indices[i*3 + 2], mesh.indices[i*3 + 1]));
   }
   return fab_mesh(faces, mesh.points);
+}
+
+Mesh triangulate (Nested<TV2> poly2) { 
+  return triangulate(nested2_to_nested3(poly2));
 }
 
 /*
@@ -1339,7 +1358,7 @@ Mesh fat_triangle(T rad, TV p0, TV p1, TV p2) {
 
 Mesh fat_edge(int n, T rad, TV from, TV to) {
   auto v = to - from;
-  auto res = extrude(magnitude(v), circle_poly(rad, n));
+  auto res = extrude(magnitude(v), circle_poly(2 * rad, n));
   auto c = (to + from) * 0.5;
   return mul(translation_matrix(c), mul(rotation_matrix(vec(0.0, 0.0, 2*rad), v), res));
 }
@@ -1352,7 +1371,7 @@ Nested<TV2> fat_edge(int n, T rad, TV2 from, TV2 to) {
 }
 
 Nested<TV2> fat_dot(int n, T rad, TV2 pt) {
-  auto circ = circle_poly(rad, n);
+  auto circ = circle_poly(2 * rad, n);
   auto res = mul(translation_matrix(pt), circ);
   return res;
 }

@@ -1,5 +1,7 @@
 #include "cad.h"
 #include "geom.h"
+#include "expr.h"
+#include "octree.h"
 #include "read-eval.h"
 
 static bool is_init_tokenizer = false;
@@ -219,10 +221,16 @@ Geom* parse_factor(Tokenizer& s) {
     s.get();
     if (tok1.sym == "pi")
       return g_pi();
-    else if (tok1.sym == "all") 
-      return g_all();
-    else if (tok1.sym == "none") 
-      return g_none();
+    else if (tok1.sym == "x")
+      return g_x();
+    else if (tok1.sym == "y")
+      return g_y();
+    else if (tok1.sym == "z")
+      return g_z();
+    else if (tok1.sym == "all3") 
+      return g_all3();
+    else if (tok1.sym == "none3") 
+      return g_none3();
     else if (tok1.sym == "all2") 
       return g_all2();
     else if (tok1.sym == "none2") 
@@ -266,8 +274,12 @@ Geom* parse_factor(Tokenizer& s) {
           } else if (tok1.sym == "poly" || tok1.sym == "polygon") {
             return g_poly(args);
           } else if (tok1.sym == "mesh") {
-            auto mesh = fab_mesh(g_array_v3i_val(args[1]), g_array_v3d_val(args[0]));
-            return new MeshGeom(mesh);
+            if (args[0]->k == octree_kind || args[0]->k == expr_kind) {
+              return g_to_mesh(args[0]);
+            } else {
+              auto mesh = fab_mesh(g_array_v3i_val(args[1]), g_array_v3d_val(args[0]));
+              return new MeshGeom(mesh);
+            }
           } else if (tok1.sym == "elt") {
             return g_elt(args[0], args[1]);
           } else if (tok1.sym == "letter") {
@@ -413,6 +425,48 @@ Geom* parse_factor(Tokenizer& s) {
           } else if (tok1.sym == "zbox") {
             g = fold_bin_op(g_zbox, 0, args);
             */
+          } else if (tok1.sym == "expr") {
+            g = g_expr(args[0]);
+          } else if (tok1.sym == "tree") {
+            extern flo_t get_radius(void), get_threshold(void);
+            if (args.size() == 3) 
+              g = g_to_tree(args[0], args[1], args[2]);
+            else
+              g = g_to_tree(args[0], g_num(get_radius()), g_num(get_threshold()));
+          } else if (tok1.sym == "neg") {
+            g = g_neg(args[0]);
+          } else if (tok1.sym == "min") {
+            g = g_min(args[0], args[1]);
+          } else if (tok1.sym == "max") {
+            g = g_max(args[0], args[1]);
+          } else if (tok1.sym == "abs") {
+            g = g_abs(args[0]);
+          } else if (tok1.sym == "sqrt") {
+            g = g_sqrt(args[0]);
+          } else if (tok1.sym == "sin") {
+            g = g_sin(args[0]);
+          } else if (tok1.sym == "cos") {
+            g = g_cos(args[0]);
+          } else if (tok1.sym == "tan") {
+            g = g_tan(args[0]);
+          } else if (tok1.sym == "asin") {
+            g = g_asin(args[0]);
+          } else if (tok1.sym == "acos") {
+            g = g_acos(args[0]);
+          } else if (tok1.sym == "atan") {
+            g = g_atan(args[0]);
+          } else if (tok1.sym == "half") {
+            g = g_half(args[0], args[1], args[2], args[3]);
+          } else if (tok1.sym == "xform") {
+            g = g_xform(args[0], args[1], args[2], args[3]);
+          } else if (tok1.sym == "pyramid") {
+            g = g_pyramid(args[0], args[1]);
+          } else if (tok1.sym == "blend") {
+            g = g_blend(args[0], args[1], args[2]);
+          } else if (tok1.sym == "shear") {
+            g = g_shear(args[0], args[1], args[2], args[3], args[4]);
+          } else if (tok1.sym == "taper") {
+            g = g_taper(args[0], args[1], args[2], args[3]);
           } else
             error("UNKNOWN FUNCTION", tok1.sym);
         }
@@ -493,12 +547,6 @@ Geom* parse_expression(Tokenizer& s) {
     tok = s.peek();
   }
   return g;
-}
-
-inline TV3 get_color(TV3 n) {
-  return vec((n.x > 0.0 ? n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0),
-             (n.y > 0.0 ? n.y : 0.0) + (n.z < 0.0 ? -0.5*n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0),
-             (n.z > 0.0 ? n.z : 0.0) + (n.x < 0.0 ? -0.5*n.x : 0.0) + (n.y < 0.0 ? -0.5*n.y : 0.0));
 }
 
 int display_mesh (Mesh mesh, bool is_show_lines, bool is_show_normals) {
@@ -584,6 +632,50 @@ TV3 hsv_to_rgb (double h, double s, double v) {
     }
   }
   return vec(rt, gt, bt);
+}
+
+int display_triangles_list (std::vector<Tri> &tris, bool is_lines, bool is_show_normals) {
+  int dl = glGenLists(1);
+  glNewList(dl, GL_COMPILE);
+  glBegin(GL_TRIANGLES);
+  for (auto t : tris) {
+    auto n = cross(t.x1 - t.x0, t.x2 - t.x0).normalized();
+    // auto c = (t.x0 + t.x1 + t.x2) * 0.3333;
+    auto dc = get_color(n);
+    glColor4f(dc.x, dc.y, dc.z, 1.0);
+    glNormal3d(n.x, n.y, n.z);
+    glVertex3d(t.x0.x, t.x0.y, t.x0.z);
+    glVertex3d(t.x1.x, t.x1.y, t.x1.z);
+    glVertex3d(t.x2.x, t.x2.y, t.x2.z);
+  }
+  glEnd();
+  if (is_show_normals) {
+    for (auto t : tris) {
+      auto n = cross(t.x1 - t.x0, t.x2 - t.x0).normalized();
+      auto c = (t.x0 + t.x1 + t.x2) * 0.3333;
+      auto d = c + n;
+      auto dc = get_color(n);
+      // glColor4f(0.0, 1.0, 0.0, 1.0);
+      glColor4f(dc.x, dc.y, dc.z, 1.0);
+      glBegin(GL_LINES);
+      glVertex3d(c.x, c.y, c.z);
+      glVertex3d(d.x, d.y, d.z);
+      glEnd();
+    }
+  }
+
+  if (is_lines) {
+    glColor4f(1.0, 0.0, 0.0, 1.0);
+    for (auto t : tris) {
+      glBegin(GL_LINE_LOOP);
+      glVertex3d(t.x0.x, t.x0.y, t.x0.z);
+      glVertex3d(t.x1.x, t.x1.y, t.x1.z);
+      glVertex3d(t.x2.x, t.x2.y, t.x2.z);
+      glEnd();
+    }
+  }
+  glEndList();
+  return dl;
 }
 
 int display_poly (Nested<TV2> poly) {
@@ -678,7 +770,13 @@ int compile_geom (std::string expr, bool is_show_lines, bool is_show_normals) {
     return display_v3d(g_v3d_val(shape));
   else if (shape->k == v2d_kind)
     return display_v2d(g_v2d_val(shape));
-  else {
+  else if (shape->k == octree_kind) {
+    auto tree = g_octree_val(shape);
+    std::vector<Octree*> voxels;
+    tree->boundary_voxels(voxels);
+    auto tris = voxels_triangles(voxels);
+    return display_triangles_list(tris, is_show_lines);
+  } else {
     error("UNDISPLAYABLE GEOM");
     return 0;
   }

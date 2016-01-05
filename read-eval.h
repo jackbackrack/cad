@@ -69,4 +69,6 @@ inline flo_t sqr (flo_t x) { return x * x; }
 
 extern int compile_geom (std::string expr, bool is_show_lines, bool is_show_normals);
 
+extern int display_triangles_list (std::vector<Tri> &tris, bool is_lines = true, bool is_show_normals = false);
+
 #endif
