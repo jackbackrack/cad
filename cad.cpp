@@ -1,7 +1,24 @@
 #include "cad.h"
+#include "ZippedView.h"
+#include <geode/array/sort.h>
 #include <geode/mesh/improve_mesh.h>
 // #include <geode/mesh/decimate.h>
 #include <fstream>
+
+bool has_dups(const RawArray<const Vec3i> raw_elements) {
+  Array<Vec3i> elements = raw_elements.copy();
+
+  std::sort(elements.begin(), elements.end(), [](const Vec3i lhs, const Vec3i rhs) {
+    return lex_less(lhs.sorted(), rhs.sorted());
+  });
+
+  for(const int i : range(elements.size()-1)) {
+    if(elements[i].sorted() == elements[i+1].sorted()) {
+      return true;
+    }
+  }
+  return false;
+}
 
 
 double rndd () {
@@ -642,8 +659,76 @@ Mesh maybe_cleanup_mesh (Mesh mesh, bool is_cleanup) {
   else
     return mesh;
 }
+
+static void simplify_duplicate_faces(Array<Vec3i>& elements, Array<int>& depth_weights) {
+
+  // Sort all elements so that duplicate faces will be adjacent
+  auto zipped = zipped_view(elements, depth_weights);
+  using Zipped = decltype(zipped);
+  std::sort(zipped.begin(), zipped.end(), [](const Zipped::Val& lhs, const Zipped::Val& rhs) {
+    return lex_less(std::get<0>(lhs).sorted(), std::get<0>(rhs).sorted());
+  });
+
+  // Scan over elements only keeping the first in groups of duplicates and updating depth_weights accordingly
+  // Erase any elements where net depth_weights is 0
+  if(!elements.empty()) {
+    // Check if sorting f flips normal of triangle 
+    const auto permutation_parity = [](const Vec3i f) {
+      const int f0 = f.argmin();
+      return (f[(f0+1) % 3] < f[(f0+2) % 3]);
+    };
+
+    int prev = 0; // Used as output iterator
+
+    for(const int next : range(1,zipped.size())) {
+      // Is this a new triangle?
+      if(elements[prev].sorted() == elements[next].sorted()) {
+        // Duplicate triangle. Need to check if normal is same or opposite of prev and update weight accordingly
+        depth_weights[prev] += depth_weights[next] * ((permutation_parity(elements[prev]) == permutation_parity(elements[next])) ? 1 : -1);
+      }
+      else {
+        // Found a new triangle
+        // Unless previous triangle had a nonzero weight, we overwrite it
+        if(depth_weights[prev] != 0) {
+          prev += 1;
+        }
+        elements[prev] = elements[next];
+        depth_weights[prev] = depth_weights[next];
+      }
+    }
+
+    // If final unique triangle had zero net weight, erase it
+    if(depth_weights[prev] == 0) {
+      prev -= 1;
+    }
+
+    // Resize to match compacted output
+    elements.resize(prev + 1);
+    depth_weights.resize(prev + 1);
+  }
+}
+
+// TODO: This function should be merged into default behavior for geode::split_soup
+Tuple<Ref<const TriangleSoup>, Array<TV>> safe_split_soup(const TriangleSoup& faces, Array<const TV> X, const int depth) {
+  // Perturbation allows us to ignore most degeneracies, but duplicates of the same face are still an issue
+  // If faces are duplicated, crossing needs to account for total depth of all duplicates
+  // If we aren't filtering by depth we leave duplicated faces. This ensures we don't cull duplicates and is safe sense depths aren't computed
+  if(depth == all_depths) {
+    return split_soup(faces, X, depth);
+  }
+
+  // Copy elements so we can find duplicates
+  Array<Vec3i> elements = faces.elements.copy();
+  auto depth_weights = Array<int>{elements.size()};
+  depth_weights.fill(1);
+  simplify_duplicate_faces(elements, depth_weights);
+
+  assert(!has_dups(elements));
+  return split_soup(new_<TriangleSoup>(elements), X, depth_weights, depth);
+}
+
 Mesh split_mesh (Mesh mesh, int depth, bool is_cleanup) {
-  auto split = split_soup(mesh.soup, mesh.points, depth);
+  auto split = safe_split_soup(mesh.soup, mesh.points, depth);
   return maybe_cleanup_mesh(Mesh(split.x, split.y), is_cleanup);
 }
 
