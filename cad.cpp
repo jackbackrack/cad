@@ -520,10 +520,14 @@ Mesh simplify_mesh(Mesh mesh) {
 }
 
 Mesh cleanup_mesh (Mesh mesh) {
-  if (true) {
-    return simplify_mesh(mesh);
+  if (false) {
+    return mesh;
   } else {
-    return quick_cleanup_mesh(mesh);
+    if (true) {
+      return simplify_mesh(mesh);
+    } else {
+      return quick_cleanup_mesh(mesh);
+    }
   }
 }
 
@@ -691,6 +695,19 @@ void pretty_print_mesh(Mesh mesh) {
     printf("TRI[%d] %2d,%2d,%2d [%f,%f,%f] [%f,%f,%f] [%f,%f,%f] AREA %f\n",
            i, tri.x, tri.y, tri.z, p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, a);
     i += 1;
+  }
+}
+
+void obj_mesh(Mesh mesh) {
+  for (auto pt : mesh.points) {
+    printf("v %f,%f,%f\n", pt.x, pt.y, pt.z);
+  }
+  for (auto tri : mesh.soup->elements) {
+    // T a = Triangle::area(mesh.points[tri.x], mesh.points[tri.y], mesh.points[tri.z]);
+    auto p0 = mesh.points[tri.x];
+    auto p1 = mesh.points[tri.y];
+    auto p2 = mesh.points[tri.z];
+    printf("f %2d,%2d,%2d\n", tri.x, tri.y, tri.z);
   }
 }
 

@@ -185,6 +185,7 @@ extern void pretty_print_nested_v3d(Nested<TV3> polyline);
 extern void pretty_print_nested_v2d(Nested<TV2> polyline);
 extern void pretty_print_poly(Nested<TV2> poly);
 extern void pretty_print_mesh(Mesh soup);
+extern void obj_mesh(Mesh soup);
 
 extern std::string num_to_str (T num);
 extern std::string v2d_to_str (TV2 pt);
