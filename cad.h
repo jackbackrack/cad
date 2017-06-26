@@ -128,6 +128,7 @@ public:
   Ref<const TriangleSoup> soup;
   Array<TV3> points;
   Mesh(Ref<const TriangleSoup> soup, Array<TV3> points) : soup(soup), points(points) { }
+  explicit Mesh(const Tuple<Ref<const TriangleSoup>,Array<TV3>> soup_and_points) : soup(soup_and_points.x), points(soup_and_points.y) { }
 };
 
 extern Mesh fab_mesh (Array<IV3> faces, Array<TV3> points);
