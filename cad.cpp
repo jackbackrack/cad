@@ -1,8 +1,8 @@
 #include "cad.h"
 #include "ZippedView.h"
+#include <geode/array/permute.h>
 #include <geode/array/sort.h>
-#include <geode/mesh/improve_mesh.h>
-// #include <geode/mesh/decimate.h>
+#include <geode/mesh/decimate.h>
 #include <fstream>
 
 bool has_dups(const RawArray<const Vec3i> raw_elements) {
@@ -321,16 +321,14 @@ Mesh topo_to_mesh (Ref<MutableTriangleTopology> topo, const Field<TV3,VertexId>&
     // printf("  %d -> %d\n", i, update);
     i += 1;
   }
-  // printf("AFTER GC %d UPDATES %d - %d\n", field.size(), updates.x.size(), tot);
-  Array<TV3> new_points(tot);
-  i = 0;
-  for (auto update : updates.x) {
-    if (update >= 0) {
-      new_points[update] = field[VertexId(i)];
-      // printf("MAPPING %d -> %d\n", i, update);
-    }
-    i += 1;
+  Array<TV3> new_points;
+  if(topo->find_field(field).valid()) {
+    new_points = field.flat.copy();
   }
+  else {
+    partial_permute(new_points, field.flat, updates.x);
+  }
+  // printf("AFTER GC %d UPDATES %d - %d\n", field.size(), updates.x.size(), tot);
   auto new_soup = topo->face_soup().x;
   // printf("SIMPLIFYING: BEFORE %d,%d AFTER %d,%d\n",
   //        pos.size(), mesh.x->elements.size(), new_points.size(), new_soup->elements.size());
@@ -521,17 +519,13 @@ Mesh simplify_mesh(Mesh mesh) {
   // printf("STARTING SIMPLIFICATION\n");
   // report_simplify_mesh(mesh);
   Array<TV3> pos(mesh.points);
-  Field<TV3,VertexId> field(pos.copy());
   auto topo = new_<MutableTriangleTopology>();
   topo->add_vertices(mesh.points.size());
   for (auto face : mesh.soup->elements)
     topo->add_face(vec((VertexId)face.x, (VertexId)face.y, (VertexId)face.z));
-  // ImproveOptions options(1.1,0.1,0.1);
-  // ImproveOptions options(1.1,0.01,0.01);
-  // ImproveOptions options(1.0000001,0.0000001,0.0000001);
-  ImproveOptions options(1 + 1e-6,1e-6,1e-6);
-  improve_mesh_inplace(topo, field, options);
-  auto final_mesh = topo_to_mesh(topo, field);
+  const auto X_id = topo->add_field(Field<TV3,VertexId>{mesh.points.copy()});
+  simplify_inplace(topo, X_id, 1e-6);
+  auto final_mesh = topo_to_mesh(topo, topo->field(X_id));
   // printf("BEFORE GC %d\n", field.size());
   return final_mesh;
 }
@@ -590,7 +584,8 @@ Array<TV2> mul_contour(Matrix<T,4> m, Array<TV2> contour, bool is_invert) {
 
 Array<TV2> cleanup_contour(RawArray<TV2> contour) {
   // TODO: LIMITS
-  return polygon_simplify(contour, 179.9, 0.0001);
+  return contour.copy();
+  //return polygon_simplify(contour, 179.9, 0.0001);
 }
 
 Nested<TV2> cleanup_poly(Nested<TV2> poly) {
